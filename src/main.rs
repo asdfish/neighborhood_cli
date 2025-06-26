@@ -1,7 +1,9 @@
 mod api;
+mod directories;
 mod subcommand;
 
 use {
+    crate::directories::Directory,
     clap::{
         builder::{Arg, Command},
         ArgAction,
@@ -10,6 +12,8 @@ use {
     std::{
         ffi::{c_char, c_int},
         fmt::{self, Display, Formatter},
+        io,
+        path::PathBuf,
         process::ExitCode,
     },
 };
@@ -47,16 +51,36 @@ fn main() -> ExitCode {
 
 enum MainError {
     CreateClient(reqwest::Error),
+    CreateDirectory(io::Error, PathBuf),
+    CreateFile(io::Error, PathBuf),
+    WriteFile(io::Error, PathBuf),
     CreateRequest(reqwest::Error),
     ExecuteRequest(reqwest::Error),
+    GetDirectory(Directory),
     Readline(ReadlineError),
 }
 impl Display for MainError {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), fmt::Error> {
         match self {
             Self::CreateClient(error) => write!(f, "failed to create https client: {error}"),
+            Self::CreateDirectory(error, path) => write!(
+                f,
+                "failed to create directory at path `{}`: {error}",
+                path.display()
+            ),
+            Self::CreateFile(error, path) => write!(
+                f,
+                "failed to create file at path `{}`: {error}",
+                path.display()
+            ),
+            Self::WriteFile(error, path) => write!(
+                f,
+                "failed to write to file at path `{}`: {error}",
+                path.display()
+            ),
             Self::CreateRequest(error) => write!(f, "failed to create request: {error}"),
             Self::ExecuteRequest(error) => write!(f, "failed to execute request: {error}"),
+            Self::GetDirectory(directory) => write!(f, "failed to get {directory} directory"),
             Self::Readline(ReadlineError::Eof | ReadlineError::Interrupted) => Ok(()),
             Self::Readline(error) => write!(f, "failed to read input: {error}"),
         }

@@ -1,12 +1,17 @@
 use {
     crate::{
         api::{PostApi, Signup, SignupResponse, VerifyOtp, VerifyOtpResponse},
+        directories::Directory,
         MainError,
     },
     clap::ArgMatches,
     reqwest::blocking::Client,
     rustyline::{error::ReadlineError, DefaultEditor},
-    std::any::Any,
+    std::{
+        any::Any,
+        fs::{DirBuilder, File},
+        io::Write,
+    },
 };
 
 pub fn execute(mut args: ArgMatches) -> Result<(), MainError> {
@@ -33,7 +38,28 @@ pub fn execute(mut args: ArgMatches) -> Result<(), MainError> {
                 .create_request(&client)
                 .map_err(MainError::ExecuteRequest)
                 .inspect(|VerifyOtpResponse { message, .. }| eprintln!("{message}"))
-                .map(|VerifyOtpResponse { token, .. }| {})
+                .and_then(|VerifyOtpResponse { token, .. }| {
+                    Directory::Cache
+                        .get()
+                        .map_err(MainError::GetDirectory)
+                        .and_then(
+                            |path| match DirBuilder::new().recursive(true).create(&path) {
+                                Ok(_) => Ok(path),
+                                Err(err) => Err(MainError::CreateDirectory(err, path)),
+                            },
+                        )
+                        .map(|mut dir| {
+                            dir.push("token");
+                            dir
+                        })
+                        .and_then(|path| match File::create(&path) {
+                            Ok(mut file) => file
+                                .write_all(token.as_bytes())
+                                .and_then(|_| file.flush())
+                                .map_err(|err| MainError::WriteFile(err, path)),
+                            Err(err) => Err(MainError::CreateFile(err, path)),
+                        })
+                })
             }
             _ => unreachable!(),
         })
