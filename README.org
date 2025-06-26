@@ -1,10 +1,8 @@
-#+title: README
+#+title: Neighborhood cli
 #+author: asdfish
 #+date: 2025-06-26
 
-* Neighborhood cli
-
-** Usage
+* Usage
 
 To use most of the sub commands, you will first need to authenticate yourself.
 
@@ -17,6 +15,6 @@ To use most of the sub commands, you will first need to authenticate yourself.
 
 Then run ~neighborhood_cli help~ to see all subcommands.
 
-** Recommendations
+* Recommendations
 
 Since the name ~neighborhood_cli~ is very long, it is recommended to either make an alias for the command or rename the executable.
