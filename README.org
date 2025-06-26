@@ -1,0 +1,22 @@
+#+title: README
+#+author: asdfish
+#+date: 2025-06-26
+
+* Neighborhood cli
+
+** Usage
+
+To use most of the sub commands, you will first need to authenticate yourself.
+
+#+begin_src shell
+  # Send otp to username@email.provider.com
+  neighborhood_cli auth send username@email.provider.com
+  # Login to `username@email.provider.com` with the otp of `1234`
+  neighborhood_cli auth login username@email.provider.com 1234
+#+end_src
+
+Then run ~neighborhood_cli help~ to see all subcommands.
+
+** Recommendations
+
+Since the name ~neighborhood_cli~ is very long, it is recommended to either make an alias for the command or rename the executable.
