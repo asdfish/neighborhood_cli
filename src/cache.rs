@@ -103,7 +103,7 @@ impl Display for GetCacheError {
                         } else if #[cfg(unix)] {
                             const ENV_VARS: &[&str] = &["XDG_CACHE_HOME", "HOME"];
                         } else if #[cfg(windows)] {
-                            const ENV_VARS: &[&str] = &["LOCALAPPDATA"]
+                            const ENV_VARS: &[&str] = &["LOCALAPPDATA"];
                         } else {
                             const ENV_VARS: &[&str] = &[];
                         }
