@@ -75,7 +75,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Linux dependencies
-        if: ${{matrix.host}} == "ubuntu-latest"
+        if: matrix.host == "ubuntu-latest"
         run: |
           sudo apt update
           sudo apt install gcc-aarch64-linux-gnu
