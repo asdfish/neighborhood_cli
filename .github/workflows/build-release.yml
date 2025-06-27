@@ -21,7 +21,7 @@ jobs:
         with:
           force-use-cross: true
           target: ${{matrix.target}}
-          args: --locked --release --bin neighborhood_cli
+          args: --locked --release
           strip: true
       - name: Upload
         uses: actions/upload-artifact@v4
