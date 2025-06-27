@@ -120,6 +120,8 @@ jobs:
       - name: Osxcross
         if: ${{matrix.osxcross}}
         uses: mbround18/setup-osxcross@v2
+        with:
+          osx-version: "12.3"
       - name: Dependencies
         run: |
           if [ -n "${{matrix.packages}}" ]; then
