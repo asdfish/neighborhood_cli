@@ -120,6 +120,9 @@ jobs:
       - name: Linux dependencies
         if: matrix.host == 'ubuntu-latest'
         run: |
+          sudo rm -r /etc/apt/sources.*
+          sudo cp /usr/share/doc/apt/examples/sources.list /etc/apt/sources.list
+
           if [ -n "${{matrix.packages}}" ]; then
               if [ -n "$(echo "${{matrix.packages}}" | grep :arm64)" ]; then
                   sudo dpkg --add-architecture arm64
