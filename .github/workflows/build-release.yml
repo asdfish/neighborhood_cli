@@ -118,7 +118,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Linux dependencies
-        if: matrix.host == 'ubuntu-latest'
+        if: runner.os == 'Linux'
         run: |
           if [ -n "${{matrix.packages}}" ]; then
               if [ -n "$(echo "${{matrix.packages}}" | grep :arm64)" ]; then
