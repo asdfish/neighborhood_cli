@@ -31,10 +31,10 @@ jobs:
             host: ubuntu-latest
             packages: gcc-aarch64-linux-gnu
             toolchain: aarch64-linux-gnu-gcc
-          # - target: aarch64-unknown-linux-ohos
-          #   host: ubuntu-latest
-          #   packages: gcc-aarch64-linux-gnu libunwind-dev:arm64
-          #   toolchain: aarch64-linux-gnu-gcc
+          - target: aarch64-unknown-linux-ohos
+            host: ubuntu-latest
+            packages: gcc-aarch64-linux-gnu
+            toolchain: aarch64-linux-gnu-gcc
 
           - target: i686-unknown-linux-gnu
             host: ubuntu-latest
