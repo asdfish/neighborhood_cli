@@ -137,7 +137,7 @@ jobs:
               export CC=gcc
               export RUSTFLAGS="${RUSTFLAGS} -Clinker=gcc"
           fi
-          export RUSTFLAGS="${RUSTFLAGS} -Ctarget-feature=+crt-static"
+          export RUSTFLAGS="${RUSTFLAGS} -Ctarget-feature=+crt-static -Z threads=8"
 
           echo "
           [unstable]
