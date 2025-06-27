@@ -66,6 +66,7 @@ jobs:
             host: ubuntu-latest
           - target: x86_64-unknown-linux-musl
             host: ubuntu-latest
+            toolchain: gcc-x86_64-linux-gnu
           - target: x86_64-unknown-linux-ohos
             host: ubuntu-latest
           - target: x86_64-unknown-netbsd
