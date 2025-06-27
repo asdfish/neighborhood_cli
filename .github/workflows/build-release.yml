@@ -55,6 +55,7 @@ jobs:
           # - target: armv7-unknown-linux-ohos
           #   host: ubuntu-latest
 
+          # TODO: uncomment when ubuntu-latest becomes 25.04
           # - target: loongarch64-unknown-linux-gnu
           #   host: ubuntu-latest
           #   packages: gcc-loongarch64-linux-gnu
@@ -73,7 +74,7 @@ jobs:
             host: ubuntu-latest
             packages: gcc-powerpc64-linux-gnu
             toolchain: powerpc64-linux-gnu-gcc
-
+p
           - target: powerpc64le-unknown-linux-gnu
             host: ubuntu-latest
             packages: gcc-powerpc64le-linux-gnu
