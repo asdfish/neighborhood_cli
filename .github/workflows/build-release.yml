@@ -133,7 +133,7 @@ jobs:
           if [ -n "${{matrix.toolchain}}" ]; then
               export CC=${{matrix.toolchain}}
               export RUSTFLAGS=-Clinker=${{matrix.toolchain}}
-          elif [ -n "$(echo "${{matrix.target}}" | grep x86_64)" ]; then
+          elif [ -n "$(echo "${{matrix.target}}" | grep x86_64 | grep linux)" ]; then
               export CC=gcc
               export RUSTFLAGS=-Clinker=gcc
           fi
