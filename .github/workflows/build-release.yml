@@ -32,6 +32,7 @@ jobs:
 
           - target: i686-unknown-linux-gnu
             host: ubuntu-latest
+            toolchain: gcc-i686-linux-gnu
 
           - target: arm-unknown-linux-gnueabi
             host: ubuntu-latest
