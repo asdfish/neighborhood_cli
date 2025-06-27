@@ -101,9 +101,9 @@ jobs:
         shell: bash
         run: |
           if [ -n "${{matrix.toolchain}}" ]; then
-              export CC_${{matrix.target}}="${{matrix.toolchain}}"
+              export CC=${{matrix.toolchain}}
           elif [ -n "$(echo "${{matrix.target}}" | grep x86_64)" ]; then
-              export CC_${{matrix.target}}="gcc"
+              export CC=gcc
           fi
 
           rustup target add ${{matrix.target}}
