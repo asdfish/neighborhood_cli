@@ -141,7 +141,7 @@ jobs:
 
           rustup target add ${{matrix.target}} --toolchain nightly
           rustup component add rust-src --toolchain nightly
-          cargo +nightly build --target ${{matrix.target}} --release --locked
+          cargo +nightly build --target ${{matrix.target}} --release --locked -Z build-std=core,alloc
       - name: Upload
         uses: actions/upload-artifact@v4
         with:
