@@ -121,6 +121,10 @@ jobs:
         if: matrix.host == 'ubuntu-latest'
         run: |
           if [ -n "${{matrix.packages}}" ]; then
+              if [ -n "$(echo "${{matrix.packages}}" | grep :arm64)" ]; then
+                  sudo dpkg --add-architecture arm64
+              fi
+
               sudo apt update
               sudo apt install "${{matrix.packages}}"
           fi
