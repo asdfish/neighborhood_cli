@@ -74,12 +74,13 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Linux dependencies
+        if: ${{matrix.host}} == "ubuntu-latest"
+        run: |
+          sudo apt update
+          sudo apt install gcc-aarch64-linux-gnu
       - name: Build
         run: |
-          if [ ! -z "$(echo ${{matrix.target}} | grep aarch64)" ]; then
-              sudo apt update && sudo apt install gcc-aarch64-linux-gnu
-          fi
-
           rustup target add ${{matrix.target}}
           cargo build --target ${{matrix.target}} --release --locked
       - name: Upload
