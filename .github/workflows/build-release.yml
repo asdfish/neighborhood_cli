@@ -138,7 +138,7 @@ jobs:
         shell: bash
         env:
           CARGO_INCREMENTAL: 0
-          RUSTFLAGS: -Ctarget-feature=+crt-static -Ccodegen-units=1 -Clto=fat -Cpanic=abort -Cstrip=true -Zthreads=8
+          RUSTFLAGS: -Ctarget-feature=+crt-static -Ccodegen-units=1 -Clto=fat -Cpanic=abort -Cstrip=symbols -Zthreads=8
         run: |
           if [ -n "${{matrix.toolchain}}" ]; then
               export CC=${{matrix.toolchain}}
