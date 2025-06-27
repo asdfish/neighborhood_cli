@@ -128,7 +128,7 @@ jobs:
 
                   UBUNTU_CODENAME="$(lsb_release -rs)"
 
-                  echo <<EOF| sudo tee -a /etc/apt
+                  echo <<EOF| sudo tee -a /etc/apt/sources.list
           deb [arch=$1] http://ports.ubuntu.com/ubuntu-ports ${UBUNTU_CODENAME} main restricted universe multiverse
           deb [arch=$1] http://ports.ubuntu.com/ubuntu-ports ${UBUNTU_CODENAME}-updates main restricted universe multiverse
           deb [arch=$1] http://ports.ubuntu.com/ubuntu-ports ${UBUNTU_CODENAME}-security main restricted universe multiverse
