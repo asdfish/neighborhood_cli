@@ -122,17 +122,16 @@ jobs:
         run: |
           if [ -n "${{matrix.packages}}" ]; then
               enable_architecture() {
-                  if [ -z "$(echo "${{matrix.packages}}" | grep :"$1")" ]; then
+                  if [ -z "$(echo "${{matrix.packages}}" | grep ":$1")" ]; then
                       return
                   fi
 
                   UBUNTU_CODENAME="$(lsb_release -rs)"
 
-                  echo <<EOF| sudo tee -a /etc/apt/sources.list
-          deb [arch=$1] http://ports.ubuntu.com/ubuntu-ports ${UBUNTU_CODENAME} main restricted universe multiverse
+                  echo "deb [arch=$1] http://ports.ubuntu.com/ubuntu-ports ${UBUNTU_CODENAME} main restricted universe multiverse
           deb [arch=$1] http://ports.ubuntu.com/ubuntu-ports ${UBUNTU_CODENAME}-updates main restricted universe multiverse
           deb [arch=$1] http://ports.ubuntu.com/ubuntu-ports ${UBUNTU_CODENAME}-security main restricted universe multiverse
-          EOF
+          " | sudo tee -a /etc/apt/sources.list
                   
                   sudo dpkg --add-architecture arm64
               }
