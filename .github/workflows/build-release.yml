@@ -120,6 +120,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Rust cache
+        uses: Swatinem/rust-cache@v4
       - name: Linux dependencies
         if: runner.os == 'Linux'
         run: |
@@ -129,6 +131,9 @@ jobs:
           fi
       - name: Build
         shell: bash
+        env:
+          CARGO_INCREMENTAL: 0
+          RUSTFLAGS: -Ctarget-feature=+crt-static -Zthreads=8
         run: |
           if [ -n "${{matrix.toolchain}}" ]; then
               export CC=${{matrix.toolchain}}
@@ -137,7 +142,6 @@ jobs:
               export CC=gcc
               export RUSTFLAGS="${RUSTFLAGS} -Clinker=gcc"
           fi
-          export RUSTFLAGS="${RUSTFLAGS} -Ctarget-feature=+crt-static -Z threads=8"
 
           echo "
           [unstable]
