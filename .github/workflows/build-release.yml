@@ -95,7 +95,7 @@ jobs:
           if [ -n "$(echo "${{matrix.target}}" | grep aarch64)" ]; then
               export CC=gcc-aarch64-linux-gnu
           elif [ -n "$(echo "${{matrix.target}}" | grep x86_64)" ]; then
-              export CC=gcc-x86_64-linux-gnu
+              export CC=gcc
           fi
 
           rustup target add ${{matrix.target}}
