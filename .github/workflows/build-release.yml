@@ -35,8 +35,10 @@ jobs:
 
           - target: arm-unknown-linux-gnueabi
             host: ubuntu-latest
+            toolchain: gcc-arm-linux-gnueabi
           - target: arm-unknown-linux-gnueabihf
             host: ubuntu-latest
+            toolchain: gcc-arm-linux-gnueabihf
 
           # - target: armv7-unknown-linux-gnueabihf
           #   host: ubuntu-latest
