@@ -149,7 +149,6 @@ jobs:
           fi
 
           cargo build --target ${{matrix.target}} --release --locked -Z build-std
-          strip target/${{matrix.target}}/neighborhood_cli${{matrix.executable-suffix}} --strip-unneeded
       - name: Upload
         uses: actions/upload-artifact@v4
         with:
