@@ -47,30 +47,6 @@ fn root_command() -> Command {
                         ),
                 ),
         )
-        .subcommand(
-            Command::new("tag").about("Tag an achievement").subcommand(
-                Command::new("devlog")
-                    .about("Tag an achievement with a video vlog")
-                    .arg(
-                        Arg::new("photobooth")
-                            .help("The video containing your explaination")
-                            .value_name("PATH")
-                            .short('p'),
-                    )
-                    .arg(
-                        Arg::new("demo")
-                            .help("The video containing a demo")
-                            .value_name("PATH")
-                            .short('d'),
-                    )
-                    .arg(
-                        Arg::new("message")
-                            .help("What did you do in this devlog?")
-                            .value_name("STRING")
-                            .short('m'),
-                    ),
-            ),
-        )
 }
 
 fn main() -> ExitCode {
