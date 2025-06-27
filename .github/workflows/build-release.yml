@@ -127,7 +127,7 @@ jobs:
                   fi
 
                   UBUNTU_CODENAME="$(lsb_release -rs)"
-                  sudo apt-add-repository "deb [arch=$1] https://ports.ubuntu.com/ubuntu-ports ${UBUNTU_CODENAME} main restricted universe multiverse"
+                  sudo apt-add-repository "deb [arch=$1] https://ports.ubuntu.com/ubuntu-ports ${UBUNTU_CODENAME} universe"
                   sudo dpkg --add-architecture arm64 || true
               }
               enable_architecture arm64
