@@ -13,13 +13,13 @@ jobs:
           - target: x86_64-apple-darwin
             host: macos-latest
 
-          - target: i686-pc-windows-gnullvm
+          - target: i686-pc-windows-gnu
             host: windows-latest
             executable-suffix: .exe
-          - target: x86_64-pc-windows-gnullvm
+          - target: x86_64-pc-windows-gnu
             host: windows-latest
             executable-suffix: .exe
-          - target: aarch64-pc-windows-gnullvm
+          - target: aarch64-pc-windows-gnu
             host: windows-latest
             executable-suffix: .exe
 
