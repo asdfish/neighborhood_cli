@@ -1,9 +1,10 @@
 mod api;
-mod directories;
+mod cache;
 mod subcommand;
 
 use {
-    crate::directories::Directory,
+    crate::cache::GetCacheError,
+    cfg_if::cfg_if,
     clap::{
         builder::{Arg, Command},
         ArgAction,
@@ -11,8 +12,8 @@ use {
     rustyline::error::ReadlineError,
     std::{
         ffi::{c_char, c_int},
-        fmt::{self, Display, Formatter},
-        io,
+        fmt::{self, Display, Formatter, Write},
+        fs, io,
         path::PathBuf,
         process::ExitCode,
     },
@@ -28,17 +29,54 @@ fn root_command() -> Command {
         .subcommand(
             Command::new("auth")
                 .about("Login/signup into neighborhood")
-                .arg(Arg::new("email").help("The email that will be used for authentication"))
+                .arg(
+                    Arg::new("email")
+                        .help("The email that will be used for authentication")
+                        .value_name("EMAIL")
+                        .required(true),
+                )
                 .subcommand(Command::new("send").about("Send an otp to this email address"))
-                .subcommand(Command::new("login").arg(Arg::new("otp").help("The received otp"))),
+                .subcommand(
+                    Command::new("login")
+                        .about("Authenticate using an otp")
+                        .arg(
+                            Arg::new("otp")
+                                .help("The received otp")
+                                .value_name("INT")
+                                .required(true),
+                        ),
+                ),
+        )
+        .subcommand(
+            Command::new("tag").about("Tag an achievement").subcommand(
+                Command::new("devlog")
+                    .about("Tag an achievement with a video vlog")
+                    .arg(
+                        Arg::new("photobooth")
+                            .help("The video containing your explaination")
+                            .value_name("PATH")
+                            .short('p'),
+                    )
+                    .arg(
+                        Arg::new("demo")
+                            .help("The video containing a demo")
+                            .value_name("PATH")
+                            .short('d'),
+                    )
+                    .arg(
+                        Arg::new("message")
+                            .help("What did you do in this devlog?")
+                            .value_name("STRING")
+                            .short('m'),
+                    ),
+            ),
         )
 }
 
 fn main() -> ExitCode {
     (|| {
         root_command()
-            .get_matches()
-            .remove_subcommand()
+            .try_get_matches()
             .map(subcommand::execute)
             .unwrap()
     })()
@@ -53,10 +91,11 @@ enum MainError {
     CreateClient(reqwest::Error),
     CreateDirectory(io::Error, PathBuf),
     CreateFile(io::Error, PathBuf),
+    GetCache(GetCacheError),
+    GetToken,
     WriteFile(io::Error, PathBuf),
     CreateRequest(reqwest::Error),
     ExecuteRequest(reqwest::Error),
-    GetDirectory(Directory),
     Readline(ReadlineError),
 }
 impl Display for MainError {
@@ -78,9 +117,10 @@ impl Display for MainError {
                 "failed to write to file at path `{}`: {error}",
                 path.display()
             ),
+            Self::GetCache(error) => error.fmt(f),
+            Self::GetToken => f.write_str("failed to get token, please run `neighborhood_cli auth <EMAIL> send` and `neighborhood_cli auth <EMAIL> login <OTP>` first"),
             Self::CreateRequest(error) => write!(f, "failed to create request: {error}"),
             Self::ExecuteRequest(error) => write!(f, "failed to execute request: {error}"),
-            Self::GetDirectory(directory) => write!(f, "failed to get {directory} directory"),
             Self::Readline(ReadlineError::Eof | ReadlineError::Interrupted) => Ok(()),
             Self::Readline(error) => write!(f, "failed to read input: {error}"),
         }
@@ -98,6 +138,7 @@ mod tests {
                 if let Some(from) = option_env!($from) {
                     assert_eq!($val, from);
                 }
+                pp
             };
         }
         test_metadata_sync!(NAME, "CARGO_PKG_NAME");

@@ -1,7 +1,7 @@
 use {
     crate::{
-        api::{PostApi, Signup, SignupResponse, VerifyOtp, VerifyOtpResponse},
-        directories::Directory,
+        api::{JsonPostApi, MessageResponse, PostApi, Signup, VerifyOtp, VerifyOtpResponse},
+        cache::PathCache,
         MainError,
     },
     clap::ArgMatches,
@@ -22,9 +22,9 @@ pub fn execute(mut args: ArgMatches) -> Result<(), MainError> {
             ("send", _) => {
                 let email = args.remove_one::<String>("email").unwrap();
                 Signup { email: &email }
-                    .create_request(&client)
+                    .execute_request(&client)
                     .map_err(MainError::ExecuteRequest)
-                    .map(|SignupResponse { message }| {
+                    .map(|MessageResponse { message }| {
                         eprintln!("{message}");
                     })
             }
@@ -35,22 +35,21 @@ pub fn execute(mut args: ArgMatches) -> Result<(), MainError> {
                     email: &email,
                     otp: &otp,
                 }
-                .create_request(&client)
+                .execute_request(&client)
                 .map_err(MainError::ExecuteRequest)
                 .inspect(|VerifyOtpResponse { message, .. }| eprintln!("{message}"))
                 .and_then(|VerifyOtpResponse { token, .. }| {
-                    Directory::Cache
-                        .get()
-                        .map_err(MainError::GetDirectory)
-                        .and_then(
-                            |path| match DirBuilder::new().recursive(true).create(&path) {
+                    PathCache::default()
+                        .into_token()
+                        .map_err(MainError::GetCache)
+                        .and_then(|path| {
+                            match DirBuilder::new()
+                                .recursive(true)
+                                .create(&path.parent().unwrap_or(&path))
+                            {
                                 Ok(_) => Ok(path),
                                 Err(err) => Err(MainError::CreateDirectory(err, path)),
-                            },
-                        )
-                        .map(|mut dir| {
-                            dir.push("token");
-                            dir
+                            }
                         })
                         .and_then(|path| match File::create(&path) {
                             Ok(mut file) => file
