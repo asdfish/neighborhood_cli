@@ -22,13 +22,17 @@ jobs:
 
           - target: aarch64-unknown-linux-gnu
             host: ubuntu-latest
+            toolchain: gcc-aarch64-linux-gnu
+          - target: aarch64-unknown-linux-musl
+            host: ubuntu-latest
+            toolchain: gcc-aarch64-linux-gnu
+          - target: aarch64-unknown-linux-ohos
+            host: ubuntu-latest
+            toolchain: gcc-aarch64-linux-gnu
+
           - target: i686-unknown-linux-gnu
             host: ubuntu-latest
           - target: x86_64-unknown-linux-gnu
-            host: ubuntu-latest
-          - target: aarch64-unknown-linux-musl
-            host: ubuntu-latest
-          - target: aarch64-unknown-linux-ohos
             host: ubuntu-latest
           - target: arm-unknown-linux-gnueabi
             host: ubuntu-latest
@@ -76,11 +80,22 @@ jobs:
         uses: actions/checkout@v4
       - name: Linux dependencies
         if: matrix.host == 'ubuntu-latest'
+        env:
+          TOOLCHAIN: ${{matrix.toolchain}}
         run: |
-          sudo apt update
-          sudo apt install gcc-aarch64-linux-gnu
+          if [ -n "${TOOLCHAIN}" ]; then
+              sudo apt update
+              sudo apt install "${TOOLCHAIN}"
+          fi
       - name: Build
+        shell: bash
+        env:
+          TOOLCHAIN: ${{matrix.toolchain}}
         run: |
+          if [ -n "${TOOLCHAIN}" ]; then
+              export CC_${{matrix.target}}="${TOOLCHAIN}"
+          fi
+
           rustup target add ${{matrix.target}}
           cargo build --target ${{matrix.target}} --release --locked
       - name: Upload
