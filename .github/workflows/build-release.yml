@@ -19,7 +19,7 @@ jobs:
           - target: x86_64-pc-windows-gnu
             host: windows-latest
             executable-suffix: .exe
-          - target: aarch64-pc-windows-gnullvm
+          - target: aarch64-pc-windows-gnu
             host: windows-latest
             executable-suffix: .exe
 
