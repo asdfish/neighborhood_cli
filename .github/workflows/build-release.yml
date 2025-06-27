@@ -121,9 +121,18 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           if [ -n "${{matrix.packages}}" ]; then
-              if [ -n "$(echo "${{matrix.packages}}" | grep :arm64)" ]; then
+              enable_architecture() {
+                  if [ -z "$(echo "${{matrix.packages}}" | grep :"$1")" ]; then
+                      return
+                  fi
+
+                  UBUNTU_CODENAME="$(lsb_release -rs)"
+                  sudo echo deb [arch=$1] http://ports.ubuntu.com/ubuntu-ports ${UBUNTU_CODENAME} main restricted universe multiverse >> /etc/apt/sources.list
+                  sudo echo deb [arch=$1] http://ports.ubuntu.com/ubuntu-ports ${UBUNTU_CODENAME}-updates main restricted universe multiverse >> /etc/apt/sources.list
+                  sudo echo deb [arch=$1] http://ports.ubuntu.com/ubuntu-ports ${UBUNTU_CODENAME}-security main restricted universe multiverse >> /etc/apt/sources.list
                   sudo dpkg --add-architecture arm64
-              fi
+              }
+              enable_architecture arm64
 
               sudo apt update
               sudo apt install "${{matrix.packages}}"
