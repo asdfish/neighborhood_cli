@@ -7,52 +7,77 @@ jobs:
   build:
     strategy:
       matrix:
-        target:
-          - aarch64-unknown-linux-gnu
-          - aarch64-unknown-linux-musl
-          - arm-unknown-linux-gnueabi
-          - arm-unknown-linux-gnueabihf
-          - arm-unknown-linux-musleabi
-          - arm-unknown-linux-musleabihf
-          - armv5te-unknown-linux-gnueabi
-          - armv5te-unknown-linux-musleabi
-          - armv7-unknown-linux-gnueabi
-          - armv7-unknown-linux-gnueabihf
-          - armv7-unknown-linux-musleabi
-          - armv7-unknown-linux-musleabihf
-          - i586-unknown-linux-gnu
-          - i586-unknown-linux-musl
-          - i686-unknown-freebsd
-          - i686-pc-windows-gnu
-          - i686-unknown-linux-gnu
-          - loongarch64-unknown-linux-gnu
-          - loongarch64-unknown-linux-musl
-          - mips64el-unknown-linux-gnuabi64
-          - powerpc-unknown-linux-gnu
-          - powerpc64-unknown-linux-gnu
-          - powerpc64le-unknown-linux-gnu
-          - riscv64gc-unknown-linux-gnu
-          - riscv64gc-unknown-linux-musl
-          - s390x-unknown-linux-gnu
-          - sparc64-unknown-linux-gnu
-          - sparcv9-sun-solaris
-          - thumbv7neon-unknown-linux-gnueabihf
-          - x86_64-pc-windows-gnu
-          - x86_64-pc-solaris
-          - x86_64-unknown-freebsd
-          - x86_64-unknown-illumos
-          - x86_64-unknown-linux-gnu
-          - x86_64-unknown-linux-musl
-    runs-on: ubuntu-latest
+        include:
+          - target: aarch64-apple-darwin
+            host: macos-latest
+          - target: x86_64-apple-darwin
+            host: macos-latest
+
+          - target: i686-pc-windows-msvc
+            host: windows-latest
+          - target: x86_64-pc-windows-msvc
+            host: windows-latest
+          - target: aarch64-pc-windows-msvc
+            host: windows-latest
+
+          - target: aarch64-unknown-linux-gnu
+            host: ubuntu-latest
+          - target: i686-unknown-linux-gnu
+            host: ubuntu-latest
+          - target: x86_64-unknown-linux-gnu
+            host: ubuntu-latest
+          - target: aarch64-unknown-linux-musl
+            host: ubuntu-latest
+          - target: aarch64-unknown-linux-ohos
+            host: ubuntu-latest
+          - target: arm-unknown-linux-gnueabi
+            host: ubuntu-latest
+          - target: arm-unknown-linux-gnueabihf
+            host: ubuntu-latest
+          - target: armv7-unknown-linux-gnueabihf
+            host: ubuntu-latest
+          - target: armv7-unknown-linux-ohos
+            host: ubuntu-latest
+          - target: loongarch64-unknown-linux-gnu
+            host: ubuntu-latest
+          - target: loongarch64-unknown-linux-musl
+            host: ubuntu-latest
+          - target: powerpc-unknown-linux-gnu
+            host: ubuntu-latest
+          - target: powerpc64-unknown-linux-gnu
+            host: ubuntu-latest
+          - target: powerpc64le-unknown-linux-gnu
+            host: ubuntu-latest
+          - target: powerpc64le-unknown-linux-musl
+            host: ubuntu-latest
+          - target: riscv64gc-unknown-linux-gnu
+            host: ubuntu-latest
+          - target: riscv64gc-unknown-linux-musl
+            host: ubuntu-latest
+          - target: s390x-unknown-linux-gnu
+            host: ubuntu-latest
+          - target: x86_64-unknown-freebsd
+            host: ubuntu-latest
+          - target: x86_64-unknown-illumos
+            host: ubuntu-latest
+          - target: x86_64-unknown-linux-musl
+            host: ubuntu-latest
+          - target: x86_64-unknown-linux-ohos
+            host: ubuntu-latest
+          - target: x86_64-unknown-netbsd
+            host: ubuntu-latest
+          - target: x86_64-pc-solaris
+            host: ubuntu-latest
+          - target: sparcv9-sun-solaris
+            host: ubuntu-latest
+    runs-on: ${{matrix.host}}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Build
-        uses: houseabsolute/actions-rust-cross@v1
-        with:
-          target: ${{matrix.target}}
-          args: --locked --release
-          strip: true
+        run: |
+          rustup target add ${{matrix.target}}
+          cargo build --target ${{matrix.target}} --release --locked
       - name: Upload
         uses: actions/upload-artifact@v4
         with:
