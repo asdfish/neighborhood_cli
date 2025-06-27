@@ -74,7 +74,7 @@ jobs:
             host: ubuntu-latest
             packages: gcc-powerpc64-linux-gnu
             toolchain: powerpc64-linux-gnu-gcc
-p
+
           - target: powerpc64le-unknown-linux-gnu
             host: ubuntu-latest
             packages: gcc-powerpc64le-linux-gnu
