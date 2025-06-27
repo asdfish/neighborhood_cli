@@ -124,8 +124,6 @@ jobs:
       - name: Rust toolchain
         run: |
           rustup target add ${{matrix.target}}
-      - name: Rust cache
-        uses: Swatinem/rust-cache@v2
       - name: Linux dependencies
         if: runner.os == 'Linux'
         run: |
