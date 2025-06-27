@@ -139,9 +139,14 @@ jobs:
           fi
           export RUSTFLAGS="${RUSTFLAGS} -Ctarget-feature=+crt-static"
 
+          echo "
+          [unstable]
+          build-std = [\"core\", \"alloc\", \"panic_abort\"]
+          " >> Cargo.toml
+
           rustup target add ${{matrix.target}} --toolchain nightly
           rustup component add rust-src --toolchain nightly
-          cargo +nightly build --target ${{matrix.target}} --release --locked -Z build-std=core,alloc,panic_abort
+          cargo +nightly build --target ${{matrix.target}} --release --locked
       - name: Upload
         uses: actions/upload-artifact@v4
         with:
