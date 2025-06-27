@@ -48,14 +48,18 @@ jobs:
 
           - target: loongarch64-unknown-linux-gnu
             host: ubuntu-latest
+            toolchain: gcc-loongarch64-linux-gnu
           - target: loongarch64-unknown-linux-musl
             host: ubuntu-latest
+            toolchain: gcc-loongarch64-linux-gnu
 
           - target: powerpc-unknown-linux-gnu
             host: ubuntu-latest
+            toolchain: gcc-powerpc-linux-gnu
 
           - target: powerpc64-unknown-linux-gnu
             host: ubuntu-latest
+            toolchain: gcc-powerpc64-linux-gnu
 
           - target: powerpc64le-unknown-linux-gnu
             host: ubuntu-latest
@@ -92,6 +96,7 @@ jobs:
 
           - target: sparcv9-sun-solaris
             host: ubuntu-latest
+            toolchain: gcc-sparc64-linux-gnu
     runs-on: ${{matrix.host}}
     steps:
       - name: Checkout
