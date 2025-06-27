@@ -32,33 +32,44 @@ jobs:
 
           - target: i686-unknown-linux-gnu
             host: ubuntu-latest
-          - target: x86_64-unknown-linux-gnu
-            host: ubuntu-latest
+
           - target: arm-unknown-linux-gnueabi
             host: ubuntu-latest
           - target: arm-unknown-linux-gnueabihf
             host: ubuntu-latest
+
           # - target: armv7-unknown-linux-gnueabihf
           #   host: ubuntu-latest
           # - target: armv7-unknown-linux-ohos
           #   host: ubuntu-latest
+
           - target: loongarch64-unknown-linux-gnu
             host: ubuntu-latest
           - target: loongarch64-unknown-linux-musl
             host: ubuntu-latest
+
           - target: powerpc-unknown-linux-gnu
             host: ubuntu-latest
+
           - target: powerpc64-unknown-linux-gnu
             host: ubuntu-latest
+
           - target: powerpc64le-unknown-linux-gnu
             host: ubuntu-latest
+            toolchain: powerpc64le-unknown-linux-gnu
           - target: powerpc64le-unknown-linux-musl
             host: ubuntu-latest
+            toolchain: powerpc64le-unknown-linux-gnu
+
           - target: riscv64gc-unknown-linux-gnu
             host: ubuntu-latest
           - target: riscv64gc-unknown-linux-musl
             host: ubuntu-latest
+
           - target: s390x-unknown-linux-gnu
+            host: ubuntu-latest
+
+          - target: x86_64-unknown-linux-gnu
             host: ubuntu-latest
           - target: x86_64-unknown-freebsd
             host: ubuntu-latest
@@ -70,8 +81,9 @@ jobs:
             host: ubuntu-latest
           - target: x86_64-unknown-netbsd
             host: ubuntu-latest
-          - target: x86_64-pc-solaris
+          - target: x86_64-ppc-solaris
             host: ubuntu-latest
+
           - target: sparcv9-sun-solaris
             host: ubuntu-latest
     runs-on: ${{matrix.host}}
@@ -80,22 +92,18 @@ jobs:
         uses: actions/checkout@v4
       - name: Linux dependencies
         if: matrix.host == 'ubuntu-latest'
-        env:
-          TOOLCHAIN: ${{matrix.toolchain}}
         run: |
-          if [ -n "${TOOLCHAIN}" ]; then
+          if [ -n "${{matrix.toolchain}}" ]; then
               sudo apt update
               sudo apt install "${TOOLCHAIN}"
           fi
       - name: Build
         shell: bash
-        env:
-          TOOLCHAIN: ${{matrix.toolchain}}
         run: |
-          if [ -n "$(echo "${{matrix.target}}" | grep aarch64)" ]; then
-              export CC=gcc-aarch64-linux-gnu
+          if [ -n "${{matrix.toolchain}}" ]; then
+              export CC_${{matrix.target}}="${{matrix.toolchain}}"
           elif [ -n "$(echo "${{matrix.target}}" | grep x86_64)" ]; then
-              export CC=gcc
+              export CC_${{matrix.target}}="gcc"
           fi
 
           rustup target add ${{matrix.target}}
