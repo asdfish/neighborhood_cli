@@ -135,8 +135,9 @@ jobs:
               export RUSTFLAGS=-Clinker=${{matrix.toolchain}}
           elif [ -n "$(echo "${{matrix.target}}" | grep x86_64 | grep linux)" ]; then
               export CC=gcc
-              export RUSTFLAGS=-Clinker=gcc
+              export RUSTFLAGS="${RUSTFLAGS} -Clinker=gcc"
           fi
+          export RUSTFLAGS="${RUSTFLAGS} -Ctarget-feature=+crt-static"
 
           rustup target add ${{matrix.target}}
           cargo build --target ${{matrix.target}} --release --locked
