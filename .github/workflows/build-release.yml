@@ -28,8 +28,6 @@ jobs:
           - loongarch64-unknown-linux-gnu
           - loongarch64-unknown-linux-musl
           - mips-unknown-linux-gnu
-          - mips-unknown-linux-musl
-          - mips64-unknown-linux-gnuabi64
           - mips64-unknown-linux-muslabi64
           - mips64el-unknown-linux-gnuabi64
           - mips64el-unknown-linux-muslabi64
