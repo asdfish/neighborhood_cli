@@ -34,10 +34,10 @@ jobs:
             host: ubuntu-latest
           - target: arm-unknown-linux-gnueabihf
             host: ubuntu-latest
-          - target: armv7-unknown-linux-gnueabihf
-            host: ubuntu-latest
-          - target: armv7-unknown-linux-ohos
-            host: ubuntu-latest
+          # - target: armv7-unknown-linux-gnueabihf
+          #   host: ubuntu-latest
+          # - target: armv7-unknown-linux-ohos
+          #   host: ubuntu-latest
           - target: loongarch64-unknown-linux-gnu
             host: ubuntu-latest
           - target: loongarch64-unknown-linux-musl
