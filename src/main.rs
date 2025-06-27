@@ -74,17 +74,12 @@ fn root_command() -> Command {
 }
 
 fn main() -> ExitCode {
-    (|| {
-        root_command()
-            .try_get_matches()
-            .map(subcommand::execute)
-            .unwrap()
-    })()
-    .map(|_| ExitCode::SUCCESS)
-    .unwrap_or_else(|err| {
-        eprintln!("{err}");
-        ExitCode::FAILURE
-    })
+    (|| subcommand::execute(root_command().get_matches()))()
+        .map(|_| ExitCode::SUCCESS)
+        .unwrap_or_else(|err| {
+            eprintln!("{err}");
+            ExitCode::FAILURE
+        })
 }
 
 enum MainError {
