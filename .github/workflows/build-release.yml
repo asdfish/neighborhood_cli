@@ -148,7 +148,7 @@ jobs:
               export RUSTFLAGS="${RUSTFLAGS} -Clinker=gcc"
           fi
 
-          cargo build --target ${{matrix.target}} --release --locked -Z build-std
+          cargo +nightly build --target ${{matrix.target}} --release --locked -Z build-std
       - name: Upload
         uses: actions/upload-artifact@v4
         with:
