@@ -29,7 +29,7 @@ jobs:
             packages: gcc-aarch64-linux-gnu
             toolchain: aarch64-linux-gnu-gcc
           - target: aarch64-unknown-linux-ohos
-            host: ubuntu-22.04
+            host: ubuntu-latest
             packages: gcc-aarch64-linux-gnu libunwind-dev:arm64
             toolchain: aarch64-linux-gnu-gcc
 
@@ -133,7 +133,7 @@ jobs:
           deb [arch=$1] http://ports.ubuntu.com/ubuntu-ports ${UBUNTU_CODENAME}-security main restricted universe multiverse
           " | sudo tee -a /etc/apt/sources.list
                   
-                  sudo dpkg --add-architecture arm64
+                  sudo dpkg --add-architecture arm64 || true
               }
               enable_architecture arm64
 
