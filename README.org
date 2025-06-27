@@ -18,3 +18,5 @@ Then run ~neighborhood_cli help~ to see all subcommands.
 * Recommendations
 
 Since the name ~neighborhood_cli~ is very long, it is recommended to either make an alias for the command or rename the executable.
+
+[[https://neighborhood.hackclub.com/][https://images.fillout.com/orgid-81/flowpublicid-2d6RsxRU3ius/widgetid-gHXJ/wLL8YM3u5TEHNwmmey7cHo/summer25.png?a=4hit9PajYRUKJJYwW78gvU]]
