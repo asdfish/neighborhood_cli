@@ -69,7 +69,7 @@ jobs:
           - target: powerpc64-unknown-linux-gnu
             host: ubuntu-latest
             toolchain-package: gcc-powerpc64-linux-gnu
-            toolchain-package: powerpc64-linux-gnu-gcc
+            toolchain: powerpc64-linux-gnu-gcc
 
           - target: powerpc64le-unknown-linux-gnu
             host: ubuntu-latest
@@ -83,6 +83,7 @@ jobs:
           - target: riscv64gc-unknown-linux-gnu
             host: ubuntu-latest
             toolchain-package: gcc-riscv64-linux-gnu
+            toolchain: riscv64-linux-gnu-gcc
           - target: riscv64gc-unknown-linux-musl
             host: ubuntu-latest
             toolchain-package: gcc-riscv64-linux-gnu
