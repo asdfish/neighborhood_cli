@@ -22,29 +22,29 @@ jobs:
 
           - target: aarch64-unknown-linux-gnu
             host: ubuntu-latest
-            toolchain-package: gcc-aarch64-linux-gnu
+            packages: gcc-aarch64-linux-gnu
             toolchain: aarch64-linux-gnu-gcc
           - target: aarch64-unknown-linux-musl
             host: ubuntu-latest
-            toolchain-package: gcc-aarch64-linux-gnu
+            packages: gcc-aarch64-linux-gnu
             toolchain: aarch64-linux-gnu-gcc
           - target: aarch64-unknown-linux-ohos
             host: ubuntu-latest
-            toolchain-package: gcc-aarch64-linux-gnu
+            packages: gcc-aarch64-linux-gnu libunwind-dev:arm64
             toolchain: aarch64-linux-gnu-gcc
 
           - target: i686-unknown-linux-gnu
             host: ubuntu-latest
-            toolchain-package: gcc-i686-linux-gnu
+            packages: gcc-i686-linux-gnu
             toolchain: i686-linux-gnu-gcc
 
           - target: arm-unknown-linux-gnueabi
             host: ubuntu-latest
-            toolchain-package: gcc-arm-linux-gnueabi
+            packages: gcc-arm-linux-gnueabi
             toolchain: arm-linux-gnueabi-gcc
           - target: arm-unknown-linux-gnueabihf
             host: ubuntu-latest
-            toolchain-package: gcc-arm-linux-gnueabihf
+            packages: gcc-arm-linux-gnueabihf
             toolchain: arm-linux-gnueabihf-gcc
 
           # - target: armv7-unknown-linux-gnueabihf
@@ -54,44 +54,44 @@ jobs:
 
           # - target: loongarch64-unknown-linux-gnu
           #   host: ubuntu-latest
-          #   toolchain-package: gcc-loongarch64-linux-gnu
+          #   packages: gcc-loongarch64-linux-gnu
           #   toolchain: loongarch64-linux-gnu-gcc
           # - target: loongarch64-unknown-linux-musl
           #   host: ubuntu-latest
-          #   toolchain-package: gcc-loongarch64-linux-gnu
+          #   packages: gcc-loongarch64-linux-gnu
           #   toolchain: loongarch64-linux-gnu-gcc
 
           - target: powerpc-unknown-linux-gnu
             host: ubuntu-latest
-            toolchain-package: gcc-powerpc-linux-gnu
+            packages: gcc-powerpc-linux-gnu
             toolchain: powerpc-linux-gnu-gcc
 
           - target: powerpc64-unknown-linux-gnu
             host: ubuntu-latest
-            toolchain-package: gcc-powerpc64-linux-gnu
+            packages: gcc-powerpc64-linux-gnu
             toolchain: powerpc64-linux-gnu-gcc
 
           - target: powerpc64le-unknown-linux-gnu
             host: ubuntu-latest
-            toolchain-package: gcc-powerpc64le-linux-gnu
+            packages: gcc-powerpc64le-linux-gnu
             toolchain: powerpc64le-linux-gnu-gcc
           - target: powerpc64le-unknown-linux-musl
             host: ubuntu-latest
-            toolchain-package: gcc-powerpc64le-linux-gnu
+            packages: gcc-powerpc64le-linux-gnu
             toolchain: powerpc64le-linux-gnu-gcc
 
           - target: riscv64gc-unknown-linux-gnu
             host: ubuntu-latest
-            toolchain-package: gcc-riscv64-linux-gnu
+            packages: gcc-riscv64-linux-gnu
             toolchain: riscv64-linux-gnu-gcc
           - target: riscv64gc-unknown-linux-musl
             host: ubuntu-latest
-            toolchain-package: gcc-riscv64-linux-gnu
+            packages: gcc-riscv64-linux-gnu
             toolchain: riscv64-linux-gnu-gcc
 
           - target: s390x-unknown-linux-gnu
             host: ubuntu-latest
-            toolchain-package: gcc-s390x-linux-gnu
+            packages: gcc-s390x-linux-gnu
             toolchain: s390x-linux-gnu-gcc
 
           - target: x86_64-unknown-linux-gnu
@@ -111,7 +111,7 @@ jobs:
 
           # - target: sparcv9-sun-solaris
           #   host: ubuntu-latest
-          #   toolchain-package: gcc-sparc64-linux-gnu
+          #   packages: gcc-sparc64-linux-gnu
           #   toolchain: sparc64-linux-gnu-gcc
     runs-on: ${{matrix.host}}
     steps:
@@ -120,9 +120,9 @@ jobs:
       - name: Linux dependencies
         if: matrix.host == 'ubuntu-latest'
         run: |
-          if [ -n "${{matrix.toolchain-package}}" ]; then
+          if [ -n "${{matrix.packages}}" ]; then
               sudo apt update
-              sudo apt install "${{matrix.toolchain-package}}"
+              sudo apt install "${{matrix.packages}}"
           fi
       - name: Build
         shell: bash
