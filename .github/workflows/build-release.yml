@@ -126,13 +126,7 @@ jobs:
                       return
                   fi
 
-                  UBUNTU_CODENAME="$(lsb_release -rs)"
-
-                  echo "deb [arch=$1] http://ports.ubuntu.com/ubuntu-ports ${UBUNTU_CODENAME} main restricted universe multiverse
-          deb [arch=$1] http://ports.ubuntu.com/ubuntu-ports ${UBUNTU_CODENAME}-updates main restricted universe multiverse
-          deb [arch=$1] http://ports.ubuntu.com/ubuntu-ports ${UBUNTU_CODENAME}-security main restricted universe multiverse
-          " | sudo tee -a /etc/apt/sources.list
-                  
+                  sudo apt-add-repository "deb [arch=$1] https://ports.ubuntu.com/ubuntu-ports main restricted universe multiverse"
                   sudo dpkg --add-architecture arm64 || true
               }
               enable_architecture arm64
