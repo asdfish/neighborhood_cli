@@ -66,7 +66,6 @@ jobs:
             host: ubuntu-latest
           - target: x86_64-unknown-linux-musl
             host: ubuntu-latest
-            toolchain: gcc-x86_64-linux-gnu
           - target: x86_64-unknown-linux-ohos
             host: ubuntu-latest
           - target: x86_64-unknown-netbsd
@@ -93,8 +92,10 @@ jobs:
         env:
           TOOLCHAIN: ${{matrix.toolchain}}
         run: |
-          if [ -n "${TOOLCHAIN}" ]; then
-              export CC_${{matrix.target}}="${TOOLCHAIN}"
+          if [ -n "$(echo "${{matrix.target}}" | grep aarch64)" ]; then
+              export CC=gcc-aarch64-linux-gnu
+          elif [ -n "$(echo "${{matrix.target}}" | grep x86_64)" ]; then
+              export CC=gcc-x86_64-linux-gnu
           fi
 
           rustup target add ${{matrix.target}}
