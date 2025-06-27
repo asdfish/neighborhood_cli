@@ -98,8 +98,8 @@ jobs:
             host: ubuntu-latest
           - target: x86_64-unknown-freebsd
             host: ubuntu-latest
-          - target: x86_64-unknown-illumos
-            host: ubuntu-latest
+          # - target: x86_64-unknown-illumos
+          #   host: ubuntu-latest
           - target: x86_64-unknown-linux-musl
             host: ubuntu-latest
           - target: x86_64-unknown-linux-ohos
