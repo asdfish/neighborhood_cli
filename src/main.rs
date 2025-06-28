@@ -79,7 +79,7 @@ fn root_command() -> Command {
                                         .help("The path to a video explaining what you did")
                                         .short('p')
                                         .long("photobooth")
-                                        .value_name("PATH")
+                                        .value_name("path")
                                         .value_parser(NonEmptyStringValueParser::default())
                                         .required(true),
                                 )
@@ -88,7 +88,7 @@ fn root_command() -> Command {
                                         .help("The path to a video showcasing your product")
                                         .short('d')
                                         .long("demo")
-                                        .value_name("PATH")
+                                        .value_name("path")
                                         .value_parser(NonEmptyStringValueParser::default())
                                         .required(true),
                                 )

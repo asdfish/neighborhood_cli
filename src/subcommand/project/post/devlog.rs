@@ -1,5 +1,5 @@
 use {
-    crate::{api::MessageResponse, cache::PathCache, subcommand::RootConfig, MainError},
+    crate::{api::MessageResponse, cache::PathCache, MainError},
     clap::ArgMatches,
     futures_lite::future,
     reqwest::{
@@ -13,20 +13,6 @@ use {
     },
     tokio::{fs, runtime},
 };
-
-pub trait FuturesExt: Future {
-    fn inspect<F>(self, mut inspection: F) -> impl Future<Output = Self::Output>
-    where
-        Self: Sized,
-        F: FnMut(&Self::Output),
-    {
-        async move {
-            let output = self.await;
-            inspection(&output);
-            output
-        }
-    }
-}
 
 async fn upload(client: &Client, token: String, path: &str) -> Result<String, MainError> {
     #[derive(Deserialize)]
@@ -73,7 +59,7 @@ async fn upload(client: &Client, token: String, path: &str) -> Result<String, Ma
     url.ok_or(MainError::Server(message))
 }
 
-pub fn execute(mut args: ArgMatches, config: &RootConfig) -> Result<(), MainError> {
+pub fn execute(mut args: ArgMatches, async_upload: bool) -> Result<(), MainError> {
     let app = args.remove_one::<String>("app").unwrap();
     let photobooth = args.remove_one::<String>("photobooth").unwrap();
     let demo = args.remove_one::<String>("demo").unwrap();
@@ -88,7 +74,7 @@ pub fn execute(mut args: ArgMatches, config: &RootConfig) -> Result<(), MainErro
         .map_err(MainError::CreateRuntime)?;
 
     let client = Client::builder().build().map_err(MainError::CreateClient)?;
-    let (photobooth, demo) = if config.async_upload {
+    let (photobooth, demo) = if async_upload {
         runtime.block_on(future::zip(
             upload(&client, token.clone(), &photobooth),
             upload(&client, token.clone(), &demo),
