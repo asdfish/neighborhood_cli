@@ -1,5 +1,5 @@
 use {
-    crate::{api::MessageResponse, cache::PathCache, MainError},
+    crate::{api::MessageResponse, cache::PathCache, subcommand::RootConfig, MainError},
     clap::ArgMatches,
     futures_lite::future,
     reqwest::{
@@ -73,7 +73,7 @@ async fn upload(client: &Client, token: String, path: &str) -> Result<String, Ma
     url.ok_or(MainError::Server(message))
 }
 
-pub fn execute(mut args: ArgMatches) -> Result<(), MainError> {
+pub fn execute(mut args: ArgMatches, config: &RootConfig) -> Result<(), MainError> {
     let app = args.remove_one::<String>("app").unwrap();
     let photobooth = args.remove_one::<String>("photobooth").unwrap();
     let demo = args.remove_one::<String>("demo").unwrap();
@@ -88,7 +88,7 @@ pub fn execute(mut args: ArgMatches) -> Result<(), MainError> {
         .map_err(MainError::CreateRuntime)?;
 
     let client = Client::builder().build().map_err(MainError::CreateClient)?;
-    let (photobooth, demo) = if args.remove_one::<bool>("async").unwrap_or_default() {
+    let (photobooth, demo) = if config.async_upload {
         runtime.block_on(future::zip(
             upload(&client, token.clone(), &photobooth),
             upload(&client, token.clone(), &demo),

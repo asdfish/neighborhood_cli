@@ -24,6 +24,13 @@ fn root_command() -> Command {
         .about("Cli for the hackclub's neighborhood event")
         .version(VERSION)
         .subcommand_required(true)
+        .arg(
+            Arg::new("async-upload")
+                .short('a')
+                .long("async-upload")
+                .help("Enable asynchronous uploads")
+                .action(ArgAction::SetTrue)
+        )
         .subcommand(
             Command::new("auth")
                 .about("Login/signup into neighborhood")
@@ -84,13 +91,6 @@ fn root_command() -> Command {
                         .value_name("STRING")
                         .required(true),
                 )
-                .arg(
-                    Arg::new("async")
-                        .help("Enable asynchronous uploads (WARNING: this may not work for large files)")
-                        .short('u')
-                        .long("async")
-                        .action(ArgAction::SetTrue)
-                ),
         )
 }
 
