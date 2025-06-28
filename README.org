@@ -7,13 +7,20 @@
 To use most of the sub commands, you will first need to authenticate yourself.
 
 #+begin_src shell
-  # Send otp to username@email.provider.com
-  neighborhood_cli auth send username@email.provider.com
-  # Login to `username@email.provider.com` with the otp of `1234`
-  neighborhood_cli auth login username@email.provider.com 1234
+  # Send otp to EMAIL
+  neighborhood_cli auth <EMAIL> send
+  # Login to `EMAIL` the otp of `INT`
+  neighborhood_cli auth <EMAIL> login <INT>
 #+end_src
 
 Then run ~neighborhood_cli help~ to see all subcommands.
+
+** Devlogs
+
+You can post devlogs with
+#+begin_src shell
+  neighborhood_cli devlog --app <STRING> --message <STRING> --photobooth <PATH> --demo <PATH>
+#+end_src
 
 * Recommendations
 
