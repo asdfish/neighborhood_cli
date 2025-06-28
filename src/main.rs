@@ -15,6 +15,7 @@ use {
         path::PathBuf,
         process::ExitCode,
     },
+    toml_edit::TomlError,
 };
 
 const NAME: &str = "neighborhood_cli";
@@ -176,7 +177,7 @@ enum MainError {
     GetCache(GetCacheError),
     GetToken,
     NoEditor,
-    ParseCache(toml::de::Error),
+    ParseCache(TomlError),
     ReadFile(io::Error, PathBuf),
     WriteFile(io::Error, PathBuf),
     ExecuteRequest(reqwest::Error),

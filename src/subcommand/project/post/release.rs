@@ -11,7 +11,11 @@ use {
         process::{Command, Stdio},
     },
     tempfile::tempdir,
-    toml::value::Date,
+    toml_edit::{
+        Date,
+        DocumentMut,
+        TomlError,
+    }
 };
 
 enum Either<L, R> {
@@ -151,6 +155,14 @@ howCanWeImprove = ""
 howDidYouHear = ""
 whatAreWeDoingWell = """#;
 
+fn validate(cache: &str) -> Result<DocumentMut, TomlError> {
+    cache.parse::<DocumentMut>().and_then(|document| {
+        toml_edit::de::from_str::<Cache>(&cache)
+            .map(move |_| document)
+            .map_err(TomlError::from)
+    })
+}
+
 pub fn execute(mut args: ArgMatches, name: &str, _async_upload: bool) -> Result<(), MainError> {
     PathCache::default()
         .into_release()
@@ -215,8 +227,15 @@ pub fn execute(mut args: ArgMatches, name: &str, _async_upload: bool) -> Result<
                             let cache = fs::read_to_string(&path)
                                 .map_err(|error| MainError::ReadFile(error, path.clone()))?;
 
-                            match toml::from_str::<Cache>(&cache) {
-                                Ok(deserialized_cache) => break Ok(Either::Right(Some((cache, deserialized_cache)))),
+                            match cache.parse::<DocumentMut>().and_then(|document| {
+                                toml_edit::de::from_str::<Cache>(&cache)
+                                    .map(move |_| document)
+                                    .map_err(TomlError::from)
+                            }) {
+                                Ok(document) => {
+                                    let _ = fs::write(&path, cache);
+                                    return Ok(document);
+                                }
                                 Err(error) => {
                                     eprintln!("{error}");
                                     loop {
@@ -225,7 +244,7 @@ pub fn execute(mut args: ArgMatches, name: &str, _async_upload: bool) -> Result<
                                         stdin().read_line(&mut line).map_err(MainError::ReadLine)?;
                                         match line.trim() {
                                             "y" | "yes" => break,
-                                            "n" | "no" => return Ok(Either::Right(None)),
+                                            "n" | "no" => return todo!(),
                                             response => eprintln!("unknown option `{response}`"),
                                         }
                                     }
@@ -237,8 +256,8 @@ pub fn execute(mut args: ArgMatches, name: &str, _async_upload: bool) -> Result<
                 }
             } else {
                 fs::read_to_string(&cache)
-                    .map(Either::Left)
                     .map_err(|error| MainError::ReadFile(error, cache))
+                    .and_then(|cache| validate(&cache).map_err(MainError::ParseCache))
             }
         })
         .map(|_| {})
