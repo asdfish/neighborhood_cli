@@ -7,11 +7,12 @@ use {
         ffi::OsString,
         fs::{self, DirBuilder, File, OpenOptions},
         io::{Write, stdin},
+        iter,
         path::PathBuf,
         process::{Command, Stdio},
     },
     tempfile::tempdir,
-    toml_edit::{Date, DocumentMut, TomlError},
+    toml_edit::{Date, DocumentMut, Item, Formatted, Value, TomlError},
 };
 
 enum Either<L, R> {
@@ -36,6 +37,19 @@ impl<L, R> Either<L, R> {
             Self::Left(l) => f(l),
             Self::Right(r) => g(r),
         }
+    }
+}
+pub trait ExtendExt<T>: Extend<T> {
+    fn try_extend<I, E>(&mut self, iter: I) -> Result<(), E>
+    where
+        I: IntoIterator<Item = Result<T, E>>
+    {
+        iter
+            .into_iter()
+            .try_for_each(|item| match item {
+                Ok(item) => Ok(self.extend(iter::once(item))),
+                Err(err) => Err(err)
+            })
     }
 }
 
@@ -156,7 +170,7 @@ fn validate(cache: &str) -> Result<DocumentMut, TomlError> {
     })
 }
 
-pub fn execute(mut args: ArgMatches, name: &str, _async_upload: bool) -> Result<(), MainError> {
+pub fn execute(mut args: ArgMatches, name: &str, async_upload: bool) -> Result<(), MainError> {
     PathCache::default()
         .into_release()
         .map_err(MainError::GetCache)
@@ -259,7 +273,21 @@ pub fn execute(mut args: ArgMatches, name: &str, _async_upload: bool) -> Result<
                     .map(Some)
             }
         })
-        .map(|mut document| {})
+        .and_then(|document| {
+            let Some(mut document) = document else { return Ok(()) };
+            let Some(Item::Value(Value::Array(new_screenshot_paths))) = document.remove("newScreenshotPaths") else {
+                return Ok(())
+            };
+            new_screenshot_paths.into_iter()
+                .flat_map(|val| match val {
+                    Value::String(string) => Some(string),
+                    _ => None,
+                })
+                .map(Formatted::into_value);
+
+            Ok(())
+            // let Some(Item::Value(new_screenshot_paths)) = document.remove("newScreenshotPaths") else { unreachable!() };
+        })
     // .map(|cache| cache.convert())
     // .and_then(|cache| toml::from_str::<Cache>(&cache).map_err(MainError::ParseCache))
     // .map(|mut cache| {
