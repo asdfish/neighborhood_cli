@@ -95,12 +95,18 @@ impl PathCache {
     pub fn read_token(&mut self) -> Result<String, MainError> {
         self.set_token()
             .map_err(MainError::GetCache)
-            .and_then(|path| fs::read_to_string(path).map_err(|_| MainError::GetToken))
+            .and_then(|path| {
+                fs::read_to_string(&path)
+                    .map_err(|error| MainError::ReadFile(error, path.to_path_buf()))
+            })
     }
     pub fn try_read_token(&self) -> Result<String, MainError> {
         self.get_token()
             .map_err(MainError::GetCache)
-            .and_then(|path| fs::read_to_string(path).map_err(|_| MainError::GetToken))
+            .and_then(|path| {
+                fs::read_to_string(path)
+                    .map_err(|error| MainError::ReadFile(error, path.to_path_buf()))
+            })
     }
 }
 

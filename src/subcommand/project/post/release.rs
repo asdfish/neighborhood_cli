@@ -1,6 +1,13 @@
 use {
-    crate::{MainError, cache::PathCache, env},
+    crate::{
+        api::MessageResponse,
+        MainError,
+        cache::PathCache,
+        env,
+        subcommand::project::post::{UploadApi, UploadImages},
+    },
     clap::ArgMatches,
+    reqwest::{Client, Response},
     serde::{Deserialize, Deserializer, Serialize},
     std::{
         borrow::Cow,
@@ -12,46 +19,9 @@ use {
         process::{Command, Stdio},
     },
     tempfile::tempdir,
-    toml_edit::{Date, DocumentMut, Item, Formatted, Value, TomlError},
+    tokio::runtime,
+    toml_edit::{Date, DocumentMut, Formatted, Item, TomlError, Value},
 };
-
-enum Either<L, R> {
-    Left(L),
-    Right(R),
-}
-impl<L, R> Either<L, R> {
-    // fn right_or_else<F>(self, f: F) -> R
-    // where
-    //     F: FnOnce(L) -> R {
-    //     match self {
-    //         Self::Left(l)
-    //         Self::Right(r) => r,
-    //     }
-    // }
-    fn converge<F, G, T>(self, f: F, g: G) -> T
-    where
-        F: FnOnce(L) -> T,
-        G: FnOnce(R) -> T,
-    {
-        match self {
-            Self::Left(l) => f(l),
-            Self::Right(r) => g(r),
-        }
-    }
-}
-pub trait ExtendExt<T>: Extend<T> {
-    fn try_extend<I, E>(&mut self, iter: I) -> Result<(), E>
-    where
-        I: IntoIterator<Item = Result<T, E>>
-    {
-        iter
-            .into_iter()
-            .try_for_each(|item| match item {
-                Ok(item) => Ok(self.extend(iter::once(item))),
-                Err(err) => Err(err)
-            })
-    }
-}
 
 const ERROR: &str = "string cannot be empty";
 
@@ -84,8 +54,11 @@ where
 
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-struct Cache {
-    #[serde(deserialize_with = "deserialize_non_empty_string", skip_deserializing)]
+struct ReleaseConfig {
+    #[serde(skip_deserializing)]
+    token: String,
+
+    #[serde(skip_deserializing)]
     changes_made: String,
     #[serde(deserialize_with = "deserialize_non_empty_string")]
     code_url: String,
@@ -131,7 +104,7 @@ struct Cache {
     what_are_we_doing_well: String,
 }
 
-const INITIAL_CACHE: &str = r#"# All the fields, unless specified otherwise should contain a value
+const INITIAL_RELEASE_CONFIG: &str = r#"# All the fields, unless specified otherwise should contain a value
 # Project
 codeUrl = "" # The link to your repository
 description = "" # Project description
@@ -162,137 +135,178 @@ howCanWeImprove = ""
 howDidYouHear = ""
 whatAreWeDoingWell = """#;
 
-fn validate(cache: &str) -> Result<DocumentMut, TomlError> {
-    cache.parse::<DocumentMut>().and_then(|document| {
-        toml_edit::de::from_str::<Cache>(&cache)
+fn validate(release_config: &str) -> Result<DocumentMut, TomlError> {
+    release_config.parse::<DocumentMut>().and_then(|document| {
+        toml_edit::de::from_str::<ReleaseConfig>(&release_config)
             .map(move |_| document)
             .map_err(TomlError::from)
     })
 }
 
 pub fn execute(mut args: ArgMatches, name: &str, async_upload: bool) -> Result<(), MainError> {
-    PathCache::default()
-        .into_release()
+    let mut path_cache = PathCache::default();
+    path_cache.set_release()?;
+    path_cache.set_token()?;
+    let token = path_cache.read_token()?;
+    let release_config = path_cache.get_release();
+    let mut release_config = release_config
         .map_err(MainError::GetCache)
         .and_then(|release| {
             if !release.is_dir() {
                 match DirBuilder::new().recursive(true).create(&release) {
-                    Ok(()) => Ok(release),
-                    Err(error) => Err(MainError::CreateDirectory(error, release)),
+                    Ok(()) => Ok(release.to_path_buf()),
+                    Err(error) => Err(MainError::CreateDirectory(error, release.to_path_buf())),
                 }
             } else {
-                Ok(release)
+                Ok(release.to_path_buf())
             }
-        })
-        .map(|mut cache| {
-            cache.push(name);
-            cache.set_extension("toml");
-            cache
-        })
-        .and_then(|cache| {
-            if !cache.exists() || args.remove_one("edit").unwrap_or_default() {
-                let contents = if !cache.exists() || args.remove_one("reset").unwrap_or_default() {
-                    Ok(Cow::Borrowed(INITIAL_CACHE))
-                } else {
-                    fs::read_to_string(&cache).map(Cow::Owned)
-                };
+        })?;
+    release_config.push(name);
+    release_config.set_extension("toml");
 
-                match contents {
-                    Ok(contents) => {
-                        let dir = tempdir().map_err(MainError::CreateTempDir)?;
+    if !release_config.exists() || args.remove_one("edit").unwrap_or_default() {
+        let contents = if !release_config.exists() || args.remove_one("reset").unwrap_or_default() {
+            Ok(Cow::Borrowed(INITIAL_RELEASE_CONFIG))
+        } else {
+            fs::read_to_string(&release_config).map(Cow::Owned)
+        };
 
-                        let mut path = PathBuf::from(dir.path());
-                        path.push(name);
-                        path.set_extension("toml");
+        match contents {
+            Ok(contents) => {
+                let dir = tempdir().map_err(MainError::CreateTempDir)?;
 
-                        fs::write(&path, contents.as_ref())
-                            .map_err(|error| MainError::WriteFile(error, path.clone()))?;
+                let mut path = PathBuf::from(dir.path());
+                path.push(name);
+                path.set_extension("toml");
 
-                        let command = args
-                            .remove_one::<String>("editor")
-                            .map(OsString::from)
-                            .map(Cow::Owned)
-                            .or_else(|| {
-                                // SAFETY: this is single threaded
-                                unsafe { env::var(c"VISUAL") }
-                                    .or_else(|| unsafe { env::var(c"EDITOR") })
-                                    .map(Cow::Borrowed)
-                            })
-                            .ok_or(MainError::NoEditor)?;
+                fs::write(&path, contents.as_ref())
+                    .map_err(|error| MainError::WriteFile(error, path.clone()))?;
 
-                        let mut command = Command::new(command);
-                        command
-                            .stdin(Stdio::inherit())
-                            .stderr(Stdio::inherit())
-                            .stdout(Stdio::inherit())
-                            .args(args.remove_many::<String>("arg").unwrap_or_default())
-                            .arg(&path);
+                let command = args
+                    .remove_one::<String>("editor")
+                    .map(OsString::from)
+                    .map(Cow::Owned)
+                    .or_else(|| {
+                        // SAFETY: this is single threaded
+                        unsafe { env::var(c"VISUAL") }
+                            .or_else(|| unsafe { env::var(c"EDITOR") })
+                            .map(Cow::Borrowed)
+                    })
+                    .ok_or(MainError::NoEditor)?;
 
-                        let mut line = String::with_capacity(3);
-                        loop {
-                            command.output().map_err(|error| {
-                                MainError::ExecuteCommand(error, format!("{command:?}"))
-                            })?;
+                let mut command = Command::new(command);
+                command
+                    .stdin(Stdio::inherit())
+                    .stderr(Stdio::inherit())
+                    .stdout(Stdio::inherit())
+                    .args(args.remove_many::<String>("arg").unwrap_or_default())
+                    .arg(&path);
 
-                            let cache = fs::read_to_string(&path)
-                                .map_err(|error| MainError::ReadFile(error, path.clone()))?;
+                let mut line = String::with_capacity(3);
+                loop {
+                    command.output().map_err(|error| {
+                        MainError::ExecuteCommand(error, format!("{command:?}"))
+                    })?;
 
-                            match cache.parse::<DocumentMut>().and_then(|document| {
-                                toml_edit::de::from_str::<Cache>(&cache)
-                                    .map(move |_| document)
-                                    .map_err(TomlError::from)
-                            }) {
-                                Ok(document) => {
-                                    let _ = fs::write(&path, cache);
-                                    break Ok(Some(document));
-                                }
-                                Err(error) => {
-                                    eprintln!("{error}");
-                                    loop {
-                                        eprintln!("Retry: (yes/no)?: ");
-                                        line.clear();
-                                        stdin()
-                                            .read_line(&mut line)
-                                            .map_err(MainError::ReadLine)?;
-                                        match line.trim() {
-                                            "y" | "yes" => continue,
-                                            "n" | "no" => return Ok(None),
-                                            response => eprintln!("unknown option `{response}`"),
-                                        }
-                                    }
+                    let release_config = fs::read_to_string(&path)
+                        .map_err(|error| MainError::ReadFile(error, path.clone()))?;
+
+                    match release_config.parse::<DocumentMut>().and_then(|document| {
+                        toml_edit::de::from_str::<ReleaseConfig>(&release_config)
+                            .map(move |_| document)
+                            .map_err(TomlError::from)
+                    }) {
+                        Ok(document) => {
+                            let _ = fs::write(&path, release_config);
+                            break Ok(document);
+                        }
+                        Err(error) => {
+                            eprintln!("{error}");
+                            loop {
+                                eprintln!("Retry: (yes/no)?: ");
+                                line.clear();
+                                stdin().read_line(&mut line).map_err(MainError::ReadLine)?;
+                                match line.trim() {
+                                    "y" | "yes" => continue,
+                                    "n" | "no" => return Ok(()),
+                                    response => eprintln!("unknown option `{response}`"),
                                 }
                             }
                         }
                     }
-                    Err(error) => Err(MainError::ReadFile(error, cache)),
                 }
-            } else {
-                fs::read_to_string(&cache)
-                    .map_err(|error| MainError::ReadFile(error, cache))
-                    .and_then(|cache| validate(&cache).map_err(MainError::ParseCache))
-                    .map(Some)
             }
-        })
-        .and_then(|document| {
-            let Some(mut document) = document else { return Ok(()) };
-            let Some(Item::Value(Value::Array(new_screenshot_paths))) = document.remove("newScreenshotPaths") else {
-                return Ok(())
-            };
-            new_screenshot_paths.into_iter()
+            Err(error) => Err(MainError::ReadFile(error, release_config.clone())),
+        }
+    } else {
+        fs::read_to_string(&release_config)
+            .map_err(|error| MainError::ReadFile(error, release_config.clone()))
+            .and_then(|release_config| {
+                validate(&release_config).map_err(MainError::ParseReleaseConfig)
+            })
+    }
+    .and_then(|mut document| {
+        let Some(Item::Value(Value::Array(new_screenshot_paths))) =
+            document.remove("newScreenshotPaths")
+        else {
+            unreachable!()
+        };
+
+        let request = UploadImages::new(
+            new_screenshot_paths
+                .into_iter()
                 .flat_map(|val| match val {
                     Value::String(string) => Some(string),
                     _ => None,
                 })
-                .map(Formatted::into_value);
+                .map(Formatted::into_value),
+        );
 
-            Ok(())
-            // let Some(Item::Value(new_screenshot_paths)) = document.remove("newScreenshotPaths") else { unreachable!() };
-        })
-    // .map(|cache| cache.convert())
-    // .and_then(|cache| toml::from_str::<Cache>(&cache).map_err(MainError::ParseCache))
-    // .map(|mut cache| {
-    //     cache.changes_made = args.remove_one("message").unwrap();
-    //     cache
-    // })
-    // .map(|cache| eprintln!("{cache:?}"))
+        let runtime = runtime::Builder::new_current_thread()
+            .enable_io()
+            .enable_time()
+            .build()
+            .map_err(MainError::CreateRuntime)?;
+        let client = Client::builder().build().map_err(MainError::CreateClient)?;
+        let urls = runtime.block_on(request.upload(&client, token))?;
+
+        document
+            .as_item_mut()
+            .as_table_mut()
+            .and_then(|table| table.get_mut("screenshots"))
+            .map(|screenshots| {
+                if let Item::Value(Value::Array(screenshots)) = screenshots {
+                    urls.into_iter()
+                        .filter(|url| !url.is_empty())
+                        .for_each(|url| screenshots.push(url))
+                }
+            });
+
+        fs::write(&release_config, document.to_string());
+        let document = toml_edit::de::from_document::<ReleaseConfig>(document)
+            .map_err(TomlError::from)
+            .map_err(MainError::ParseReleaseConfig)?;
+
+        runtime.block_on(async {
+            client
+                .post("https://neighborhood.hackclub.com/api/shipApp")
+                .json(&document)
+                .send()
+                .await
+                .and_then(Response::error_for_status)
+                .map_err(MainError::ExecuteRequest)?
+                .text()
+                .await
+                .map_err(MainError::ExecuteRequest)
+                .and_then(|response| {
+                    serde_json::from_str(&response)
+                        .map_err(|error| MainError::DecodeResponse(error, response.to_string()))
+                })
+                .map(|MessageResponse { message }| {
+                    eprintln!("{message}");
+                })
+        });
+
+        Ok(())
+    })
 }

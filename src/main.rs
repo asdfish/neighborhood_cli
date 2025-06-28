@@ -6,8 +6,8 @@ mod subcommand;
 use {
     crate::cache::GetCacheError,
     clap::{
-        ArgAction,
         builder::{Arg, Command, NonEmptyStringValueParser, Resettable},
+        ArgAction,
     },
     std::{
         fmt::{self, Display, Formatter},
@@ -165,7 +165,7 @@ fn main() -> ExitCode {
 }
 
 #[derive(Debug)]
-enum MainError {
+pub enum MainError {
     CreateClient(reqwest::Error),
     CreateDirectory(io::Error, PathBuf),
     CreateFile(io::Error, PathBuf),
@@ -177,7 +177,7 @@ enum MainError {
     GetCache(GetCacheError),
     GetToken,
     NoEditor,
-    ParseCache(TomlError),
+    ParseReleaseConfig(TomlError),
     ReadFile(io::Error, PathBuf),
     WriteFile(io::Error, PathBuf),
     ExecuteRequest(reqwest::Error),
@@ -203,7 +203,7 @@ impl Display for MainError {
             Self::ExecuteCommand(error, command) => write!(f, "failed to execute command `{command}`: {error}"),
             Self::ReadLine(error) => write!(f, "failed to read input: {error}"),
             Self::NoEditor => f.write_str("failed to get editor: flag `--editor` was not specified and both environment variables `VISUAL` and `EDITOR` were not set"),
-            Self::ParseCache(error) => write!(f, "failed to read cache: {error}\nRun `neighborhood_cli project <project> post ship -m <message> -e` to edit"),
+            Self::ParseReleaseConfig(error) => write!(f, "failed to read release config:\n{error}\nRun `neighborhood_cli project <project> post ship -m <message> -e` to edit"),
             Self::ReadFile(error, path) => write!(
                 f,
                 "failed to read file at path `{}`: {error}",
@@ -220,6 +220,11 @@ impl Display for MainError {
             Self::Server(Some(error)) => write!(f, "the backend responded with an error: {error}"),
             Self::Server(None) => f.write_str("the backend responded with an unknown error"),
         }
+    }
+}
+impl From<GetCacheError> for MainError {
+    fn from(error: GetCacheError) -> Self {
+        Self::GetCache(error)
     }
 }
 
