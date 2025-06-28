@@ -4,16 +4,10 @@ mod subcommand;
 
 use {
     crate::cache::GetCacheError,
-    cfg_if::cfg_if,
-    clap::{
-        builder::{Arg, Command},
-        ArgAction,
-    },
-    rustyline::error::ReadlineError,
+    clap::builder::{Arg, Command},
     std::{
-        ffi::{c_char, c_int},
-        fmt::{self, Display, Formatter, Write},
-        fs, io,
+        fmt::{self, Display, Formatter},
+        io,
         path::PathBuf,
         process::ExitCode,
     },
@@ -26,6 +20,7 @@ fn root_command() -> Command {
     Command::new(NAME)
         .about("Cli for the hackclub's neighborhood event")
         .version(VERSION)
+        .subcommand_required(true)
         .subcommand(
             Command::new("auth")
                 .about("Login/signup into neighborhood")
@@ -35,7 +30,11 @@ fn root_command() -> Command {
                         .value_name("EMAIL")
                         .required(true),
                 )
-                .subcommand(Command::new("send").about("Send an otp to this email address"))
+                .subcommand(
+                    Command::new("send")
+                        .visible_alias("signup")
+                        .about("Send an otp to this email address or sign up for neighborhood if this email address is new"),
+                )
                 .subcommand(
                     Command::new("login")
                         .about("Authenticate using an otp")
@@ -45,6 +44,42 @@ fn root_command() -> Command {
                                 .value_name("INT")
                                 .required(true),
                         ),
+                ),
+        )
+        .subcommand(
+            Command::new("devlog")
+                .about("Post a devlog")
+                .arg(
+                    Arg::new("app")
+                        .help("The name of the app associated with this devlog")
+                        .short('a')
+                        .long("app")
+                        .value_name("STRING")
+                        .required(true),
+                )
+                .arg(
+                    Arg::new("photobooth")
+                        .help("The path to a video explaining what you did")
+                        .short('p')
+                        .long("photobooth")
+                        .value_name("PATH")
+                        .required(true),
+                )
+                .arg(
+                    Arg::new("demo")
+                        .help("The path to a video showcasing your product")
+                        .short('d')
+                        .long("demo")
+                        .value_name("PATH")
+                        .required(true),
+                )
+                .arg(
+                    Arg::new("message")
+                        .help("A message describing what you did")
+                        .short('m')
+                        .long("message")
+                        .value_name("STRING")
+                        .required(true),
                 ),
         )
 }
@@ -58,16 +93,19 @@ fn main() -> ExitCode {
         })
 }
 
+#[derive(Debug)]
 enum MainError {
     CreateClient(reqwest::Error),
     CreateDirectory(io::Error, PathBuf),
     CreateFile(io::Error, PathBuf),
+    CreateRuntime(io::Error),
+    DecodeResponse(serde_json::Error, String),
     GetCache(GetCacheError),
     GetToken,
+    ReadFile(io::Error, PathBuf),
     WriteFile(io::Error, PathBuf),
-    CreateRequest(reqwest::Error),
     ExecuteRequest(reqwest::Error),
-    Readline(ReadlineError),
+    Server(Option<String>),
 }
 impl Display for MainError {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), fmt::Error> {
@@ -83,6 +121,13 @@ impl Display for MainError {
                 "failed to create file at path `{}`: {error}",
                 path.display()
             ),
+            Self::CreateRuntime(error) => write!(f, "failed to create runtime: {error}"),
+            Self::DecodeResponse(error, response) => write!(f, "failed to decode response `{response}`: {error}"),
+            Self::ReadFile(error, path) => write!(
+                f,
+                "failed to read file at path `{}`: {error}",
+                path.display()
+            ),
             Self::WriteFile(error, path) => write!(
                 f,
                 "failed to write to file at path `{}`: {error}",
@@ -90,10 +135,9 @@ impl Display for MainError {
             ),
             Self::GetCache(error) => error.fmt(f),
             Self::GetToken => f.write_str("failed to get token, please run `neighborhood_cli auth <EMAIL> send` and `neighborhood_cli auth <EMAIL> login <OTP>` first"),
-            Self::CreateRequest(error) => write!(f, "failed to create request: {error}"),
             Self::ExecuteRequest(error) => write!(f, "failed to execute request: {error}"),
-            Self::Readline(ReadlineError::Eof | ReadlineError::Interrupted) => Ok(()),
-            Self::Readline(error) => write!(f, "failed to read input: {error}"),
+            Self::Server(Some(error)) => write!(f, "the backend responded with an error: {error}"),
+            Self::Server(None) => f.write_str("the backend responded with an unknown error"),
         }
     }
 }

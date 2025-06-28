@@ -1,8 +1,9 @@
 use {
+    crate::MainError,
     cfg_if::cfg_if,
     std::{
         fmt::{self, Display, Formatter, Write},
-        marker::PhantomData,
+        fs,
         path::{Path, PathBuf},
     },
 };
@@ -11,7 +12,6 @@ use {
 pub struct PathCache {
     root: Option<PathBuf>,
     token: Option<PathBuf>,
-    devlog: Option<PathBuf>,
 }
 impl PathCache {
     fn set_root_raw(root: &mut Option<PathBuf>) -> Option<&Path> {
@@ -48,15 +48,9 @@ impl PathCache {
     pub fn set_token(&mut self) -> Result<&Path, GetCacheError> {
         Self::set_branch(&mut self.root, &mut self.token, "token")
     }
-    pub fn set_devlog(&mut self) -> Result<&Path, GetCacheError> {
-        Self::set_branch(&mut self.root, &mut self.devlog, "devlog.toml")
-    }
 
     pub fn get_token(&self) -> Result<&Path, GetCacheError> {
         self.token.as_deref().ok_or(GetCacheError)
-    }
-    pub fn get_devlog(&self) -> Result<&Path, GetCacheError> {
-        self.devlog.as_deref().ok_or(GetCacheError)
     }
 
     pub fn into_root(mut self) -> Result<PathBuf, GetCacheError> {
@@ -87,11 +81,20 @@ impl PathCache {
     pub fn into_token(mut self) -> Result<PathBuf, GetCacheError> {
         Self::into_branch(&mut self.root, &mut self.token, "token")
     }
-    pub fn into_devlog(mut self) -> Result<PathBuf, GetCacheError> {
-        Self::into_branch(&mut self.root, &mut self.devlog, "devlog.toml")
+
+    pub fn read_token(&mut self) -> Result<String, MainError> {
+        self.set_token()
+            .map_err(MainError::GetCache)
+            .and_then(|path| fs::read_to_string(path).map_err(|_| MainError::GetToken))
+    }
+    pub fn try_read_token(&self) -> Result<String, MainError> {
+        self.get_token()
+            .map_err(MainError::GetCache)
+            .and_then(|path| fs::read_to_string(path).map_err(|_| MainError::GetToken))
     }
 }
 
+#[derive(Debug)]
 pub struct GetCacheError;
 impl Display for GetCacheError {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), fmt::Error> {
