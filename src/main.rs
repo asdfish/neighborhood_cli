@@ -4,7 +4,10 @@ mod subcommand;
 
 use {
     crate::cache::GetCacheError,
-    clap::builder::{Arg, Command},
+    clap::{
+        builder::{Arg, Command},
+        ArgAction,
+    },
     std::{
         fmt::{self, Display, Formatter},
         io,
@@ -80,6 +83,13 @@ fn root_command() -> Command {
                         .long("message")
                         .value_name("STRING")
                         .required(true),
+                )
+                .arg(
+                    Arg::new("async")
+                        .help("Enable asynchronous uploads (WARNING: this may not work for large files)")
+                        .short('u')
+                        .long("async")
+                        .action(ArgAction::SetTrue)
                 ),
         )
 }

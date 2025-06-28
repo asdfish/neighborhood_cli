@@ -88,16 +88,20 @@ pub fn execute(mut args: ArgMatches) -> Result<(), MainError> {
         .map_err(MainError::CreateRuntime)?;
 
     let client = Client::builder().build().map_err(MainError::CreateClient)?;
-    let photobooth = runtime.block_on(upload(&client, token.clone(), &photobooth))?;
-    let demo = runtime.block_on(upload(&client, token.clone(), &demo))?;
+    let (photobooth, demo) = if args.remove_one::<bool>("async").unwrap_or_default() {
+        runtime.block_on(future::zip(
+            upload(&client, token.clone(), &photobooth),
+            upload(&client, token.clone(), &demo),
+        ))
+    } else {
+        (
+            runtime.block_on(upload(&client, token.clone(), &photobooth)),
+            runtime.block_on(upload(&client, token.clone(), &demo)),
+        )
+    };
 
-    // This always returns 502 :(
-    // let (photobooth, demo) = runtime.block_on(future::zip(
-    //     upload(&client, token.clone(), &photobooth),
-    //     upload(&client, token.clone(), &demo),
-    // ));
-    // let photobooth = photobooth?;
-    // let demo = demo?;
+    let photobooth = photobooth?;
+    let demo = demo?;
 
     #[derive(Serialize)]
     #[serde(rename_all = "camelCase")]

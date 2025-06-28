@@ -19,7 +19,7 @@ Then run ~neighborhood_cli help~ to see all subcommands.
 
 You can post devlogs with
 #+begin_src shell
-  neighborhood_cli devlog --app <STRING> --message <STRING> --photobooth <PATH> --demo <PATH>
+  neighborhood_cli devlog -u --app <STRING> --message <STRING> --photobooth <PATH> --demo <PATH>
 #+end_src
 
 * Recommendations
