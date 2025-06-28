@@ -2,15 +2,11 @@ mod api;
 mod cache;
 mod env;
 mod subcommand;
-mod value_parser;
 
 use {
-    crate::{
-        cache::GetCacheError,
-        value_parser::CommandValueParser,
-    },
+    crate::cache::GetCacheError,
     clap::{
-        builder::{Arg, Command, NonEmptyStringValueParser},
+        builder::{Arg, Command, NonEmptyStringValueParser, Resettable},
         ArgAction,
     },
     std::{
@@ -29,20 +25,12 @@ fn root_command() -> Command {
         .about("Cli for the hackclub's neighborhood event")
         .version(VERSION)
         .subcommand_required(true)
-        .arg(
-            Arg::new("async-upload")
-                .short('a')
-                .long("async-upload")
-                .help("Enable asynchronous uploads")
-                .action(ArgAction::SetTrue)
-        )
         .subcommand(
             Command::new("auth")
                 .about("Login/signup into neighborhood")
                 .arg(
                     Arg::new("email")
                         .help("The email that will be used for authentication")
-                        .value_name("EMAIL")
                         .value_parser(NonEmptyStringValueParser::default())
                         .required(true),
                 )
@@ -58,85 +46,62 @@ fn root_command() -> Command {
                         .arg(
                             Arg::new("otp")
                                 .help("The received otp")
-                                .value_name("INT")
                                 .value_parser(NonEmptyStringValueParser::default())
                                 .required(true),
                         ),
                 ),
         )
         .subcommand(
-            Command::new("devlog")
-                .about("Post a devlog")
+            Command::new("project")
+                .about("Manipulate projects")
                 .arg(
-                    Arg::new("app")
-                        .help("The name of the app associated with this devlog")
-                        .short('a')
-                        .long("app")
-                        .value_name("STRING")
+                    Arg::new("name")
+                        .help("The name of this project")
                         .value_parser(NonEmptyStringValueParser::default())
-                        .required(true),
-                )
-                .arg(
-                    Arg::new("photobooth")
-                        .help("The path to a video explaining what you did")
-                        .short('p')
-                        .long("photobooth")
-                        .value_name("PATH")
-                        .value_parser(NonEmptyStringValueParser::default())
-                        .required(true),
-                )
-                .arg(
-                    Arg::new("demo")
-                        .help("The path to a video showcasing your product")
-                        .short('d')
-                        .long("demo")
-                        .value_name("PATH")
-                        .value_parser(NonEmptyStringValueParser::default())
-                        .required(true),
-                )
-                .arg(
-                    Arg::new("message")
-                        .help("A message describing what you did")
-                        .short('m')
-                        .long("message")
-                        .value_name("STRING")
-                        .value_parser(NonEmptyStringValueParser::default())
-                        .required(true),
-                )
-        )
-        .subcommand(
-            Command::new("ship")
-                .about("Ship a new release")
-                .visible_alias("release")
-                .arg(
-                    Arg::new("key")
                         .required(true)
-                        .value_name("STRING")
-                        .value_parser(NonEmptyStringValueParser::default())
-                        .help("The key to a cached config")
                 )
                 .subcommand_required(true)
                 .subcommand(
-                    Command::new("edit")
-                        .about("Edit this cache")
+                    Command::new("post")
+                        .about("Post things related to this project")
+                        .subcommand_required(true)
                         .arg(
-                            Arg::new("editor")
-                                .help("The editor used to edit the config. This is required unless `$EDITOR` or `$VISUAL` is set")
-                                .short('e')
-                                .long("editor")
-                                .value_name("COMMAND")
-                                .value_parser(CommandValueParser)
-                                .required(!(env::contains_var(c"EDITOR") || env::contains_var(c"VISUAL")))
-                        )
-                        .arg(
-                            Arg::new("arg")
-                                .help("Arguments passed to the editor like this: <EDITOR> <ARGS> <FILE>")
+                            Arg::new("async")
+                                .help("Enable asynchronous uploads. WARNING: This may not work with large files.")
                                 .short('a')
-                                .long("arg")
-                                .value_name("STRING")
+                                .action(ArgAction::SetTrue)
+                        )
+                        .subcommand(
+                            Command::new("devlog")
+                                .about("Post a devlog")
+                                .arg(
+                                    Arg::new("photobooth")
+                                        .help("The path to a video explaining what you did")
+                                        .short('p')
+                                        .long("photobooth")
+                                        .value_name("PATH")
+                                        .value_parser(NonEmptyStringValueParser::default())
+                                        .required(true),
+                                )
+                                .arg(
+                                    Arg::new("demo")
+                                        .help("The path to a video showcasing your product")
+                                        .short('d')
+                                        .long("demo")
+                                        .value_name("PATH")
+                                        .value_parser(NonEmptyStringValueParser::default())
+                                        .required(true),
+                                )
+                                .arg(
+                                    Arg::new("message")
+                                        .help("A message describing what you did")
+                                        .short('m')
+                                        .long("message")
+                                        .value_parser(NonEmptyStringValueParser::default())
+                                        .required(true),
+                                )
                         )
                 )
-                .subcommand(Command::new("post").about("Post this cache"))
         )
 }
 
