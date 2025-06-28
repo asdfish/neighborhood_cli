@@ -63,14 +63,19 @@ fn root_command() -> Command {
                 )
                 .subcommand_required(true)
                 .subcommand(
-                    Command::new("post")
-                        .about("Post things related to this project")
+                    Command::new("update")
+                        .about("Update things related to this project")
                         .subcommand_required(true)
                         .arg(
                             Arg::new("async")
                                 .help("Enable asynchronous uploads. WARNING: This may not work with large files")
                                 .short('a')
                                 .action(ArgAction::SetTrue)
+                        )
+                        .arg(
+                            Arg::new("message")
+                                .help("What changed between this and the last version")
+                                .value_parser(NonEmptyStringValueParser::default())
                         )
                         .subcommand(
                             Command::new("devlog")
@@ -93,27 +98,11 @@ fn root_command() -> Command {
                                         .value_parser(NonEmptyStringValueParser::default())
                                         .required(true),
                                 )
-                                .arg(
-                                    Arg::new("message")
-                                        .help("A message describing what you did")
-                                        .short('m')
-                                        .long("message")
-                                        .value_parser(NonEmptyStringValueParser::default())
-                                        .required(true),
-                                )
                         )
                         .subcommand(
                             Command::new("release")
                                 .visible_alias("ship")
                                 .about("Post a new release")
-                                .arg(
-                                    Arg::new("message")
-                                        .short('m')
-                                        .long("message")
-                                        .help("Describe what you did in this release")
-                                        .value_parser(NonEmptyStringValueParser::default())
-                                        .required(true)
-                                )
                                 .arg(
                                     Arg::new("editor")
                                         .short('E')

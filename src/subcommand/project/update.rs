@@ -6,13 +6,13 @@ use {
     clap::ArgMatches,
     futures_lite::stream::{self, StreamExt},
     reqwest::{
-        Client, Response,
         multipart::{Form, Part},
+        Client, Response,
     },
-    serde::{Deserialize, de::DeserializeOwned},
+    serde::{de::DeserializeOwned, Deserialize},
     std::{
         path::{self, Path, PathBuf},
-        pin::{Pin, pin},
+        pin::{pin, Pin},
         sync::LazyLock,
     },
     tokio::fs,
@@ -166,11 +166,12 @@ impl UploadApi for UploadVideo<'_> {
 
 pub fn execute(mut args: ArgMatches, name: &str) -> Result<(), MainError> {
     let async_upload = args.remove_one("async").unwrap_or_default();
+    let message = args.remove_one::<String>("message").unwrap();
     let (subcommand, args) = args.remove_subcommand().unwrap();
 
     match subcommand.as_str() {
-        "devlog" => devlog::execute(args, name, async_upload),
-        "release" | "ship" => release::execute(args, name, async_upload),
+        "devlog" => devlog::execute(args, name, async_upload, message.as_str()),
+        "release" | "ship" => release::execute(args, name, async_upload, message),
         _ => unreachable!(),
     }
 }

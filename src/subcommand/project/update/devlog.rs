@@ -1,15 +1,15 @@
 use {
     crate::{
-        MainError,
         api::MessageResponse,
         cache::PathCache,
-        subcommand::project::post::{UploadApi, UploadVideo},
+        subcommand::project::update::{UploadApi, UploadVideo},
+        MainError,
     },
     clap::ArgMatches,
     futures_lite::future,
     reqwest::{
-        Client, Response,
         multipart::{Form, Part},
+        Client, Response,
     },
     serde::{Deserialize, Serialize},
     std::{
@@ -19,10 +19,14 @@ use {
     tokio::{fs, runtime},
 };
 
-pub fn execute(mut args: ArgMatches, name: &str, async_upload: bool) -> Result<(), MainError> {
+pub fn execute(
+    mut args: ArgMatches,
+    name: &str,
+    async_upload: bool,
+    message: &str,
+) -> Result<(), MainError> {
     let photobooth = args.remove_one::<String>("photobooth").unwrap();
     let demo = args.remove_one::<String>("demo").unwrap();
-    let message = args.remove_one::<String>("message").unwrap();
 
     let token = PathCache::default().read_token()?;
 

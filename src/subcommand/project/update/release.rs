@@ -4,7 +4,7 @@ use {
         MainError,
         cache::PathCache,
         env,
-        subcommand::project::post::{UploadApi, UploadImages},
+        subcommand::project::update::{UploadApi, UploadImages},
     },
     clap::ArgMatches,
     reqwest::{Client, Response},
@@ -143,7 +143,7 @@ fn validate(release_config: &str) -> Result<DocumentMut, TomlError> {
     })
 }
 
-pub fn execute(mut args: ArgMatches, name: &str, async_upload: bool) -> Result<(), MainError> {
+pub fn execute(mut args: ArgMatches, name: &str, async_upload: bool, message: String) -> Result<(), MainError> {
     let mut path_cache = PathCache::default();
     path_cache.set_release()?;
     path_cache.set_token()?;
@@ -268,7 +268,7 @@ pub fn execute(mut args: ArgMatches, name: &str, async_upload: bool) -> Result<(
             .build()
             .map_err(MainError::CreateRuntime)?;
         let client = Client::builder().build().map_err(MainError::CreateClient)?;
-        let urls = runtime.block_on(request.upload(&client, token))?;
+        let urls = runtime.block_on(request.upload(&client, token.clone()))?;
 
         document
             .as_item_mut()
@@ -283,14 +283,16 @@ pub fn execute(mut args: ArgMatches, name: &str, async_upload: bool) -> Result<(
             });
 
         fs::write(&release_config, document.to_string());
-        let document = toml_edit::de::from_document::<ReleaseConfig>(document)
+        let mut release_config = toml_edit::de::from_document::<ReleaseConfig>(document)
             .map_err(TomlError::from)
             .map_err(MainError::ParseReleaseConfig)?;
+        release_config.changes_made = message;
+        release_config.token = token;
 
         runtime.block_on(async {
             client
                 .post("https://neighborhood.hackclub.com/api/shipApp")
-                .json(&document)
+                .json(&release_config)
                 .send()
                 .await
                 .and_then(Response::error_for_status)
