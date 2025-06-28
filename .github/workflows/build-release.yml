@@ -140,7 +140,6 @@ jobs:
       - name: Build
         shell: bash
         env:
-          CARGO_INCREMENTAL: 0
           RUSTFLAGS: -Ctarget-feature=+crt-static -Ccodegen-units=1 -Clto=fat -Cpanic=abort -Cstrip=symbols -Cembed-bitcode=yes
         run: |
           if [ -n "${{matrix.toolchain}}" ]; then
