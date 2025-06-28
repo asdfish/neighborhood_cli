@@ -26,9 +26,9 @@ You can post devlogs with
 
 You can ship releases with
 #+begin_src shell
-  neighborhood_cli project <project> post ship -m 'foo'
+  neighborhood_cli project <project> update ship -m 'foo'
   # use text editor for form
-  neighborhood_cli project <project> post ship -m 'foo' -e
+  neighborhood_cli project <project> update ship -m 'foo' -e
 #+end_src
 
 [[https://neighborhood.hackclub.com/][https://images.fillout.com/orgid-81/flowpublicid-2d6RsxRU3ius/widgetid-gHXJ/wLL8YM3u5TEHNwmmey7cHo/summer25.png?a=4hit9PajYRUKJJYwW78gvU]]
