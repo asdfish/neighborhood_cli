@@ -59,8 +59,7 @@ async fn upload(client: &Client, token: String, path: &str) -> Result<String, Ma
     url.ok_or(MainError::Server(message))
 }
 
-pub fn execute(mut args: ArgMatches, async_upload: bool) -> Result<(), MainError> {
-    let app = args.remove_one::<String>("app").unwrap();
+pub fn execute(mut args: ArgMatches, name: &str, async_upload: bool) -> Result<(), MainError> {
     let photobooth = args.remove_one::<String>("photobooth").unwrap();
     let demo = args.remove_one::<String>("demo").unwrap();
     let message = args.remove_one::<String>("message").unwrap();
@@ -107,7 +106,7 @@ pub fn execute(mut args: ArgMatches, async_upload: bool) -> Result<(), MainError
                 photobooth_video: &photobooth,
                 description: &message,
                 neighbor: &token,
-                app: &app,
+                app: name,
             })
             .send()
             .await

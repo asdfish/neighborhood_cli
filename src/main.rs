@@ -67,7 +67,7 @@ fn root_command() -> Command {
                         .subcommand_required(true)
                         .arg(
                             Arg::new("async")
-                                .help("Enable asynchronous uploads. WARNING: This may not work with large files.")
+                                .help("Enable asynchronous uploads. WARNING: This may not work with large files")
                                 .short('a')
                                 .action(ArgAction::SetTrue)
                         )
@@ -101,6 +101,55 @@ fn root_command() -> Command {
                                         .required(true),
                                 )
                         )
+                        .subcommand(
+                            Command::new("release")
+                                .visible_alias("ship")
+                                .about("Post a new release")
+                                .arg(
+                                    Arg::new("message")
+                                        .short('m')
+                                        .long("message")
+                                        .help("Describe what you did in this release")
+                                        .value_parser(NonEmptyStringValueParser::default())
+                                        .required(true)
+                                )
+                                .arg(
+                                    Arg::new("editor")
+                                        .short('E')
+                                        .long("editor")
+                                        .help("The editor used for editing the form. If this is unset, `VISUAL` and `EDITOR` will bve used instead and will raise an error if those are also unset")
+                                        .value_parser(NonEmptyStringValueParser::default())
+                                )
+                                .arg(
+                                    Arg::new("arg")
+                                        .short('a')
+                                        .long("arg")
+                                        .help("Arguments passed to the editor")
+                                        .value_parser(NonEmptyStringValueParser::default())
+                                )
+                                .arg(
+                                    Arg::new("edit")
+                                        .short('e')
+                                        .long("edit")
+                                        .help("If set, this will use <editor> to edit the form. Using this will also enable more things to be edited")
+                                        .action(ArgAction::SetTrue)
+                                )
+                                .arg(
+                                    Arg::new("reset")
+                                        .short('r')
+                                        .long("reset")
+                                        .help("If set, this will reset your cached form")
+                                        .action(ArgAction::SetTrue)
+                                        .requires("edit")
+                                )
+                                .arg(
+                                    Arg::new("no-confirm")
+                                        .short('y')
+                                        .long("no-confirm")
+                                        .help("Disable prompts, answering yes to them all")
+                                        .action(ArgAction::SetTrue)
+                                )
+                        )
                 )
         )
 }
@@ -120,9 +169,14 @@ enum MainError {
     CreateDirectory(io::Error, PathBuf),
     CreateFile(io::Error, PathBuf),
     CreateRuntime(io::Error),
+    CreateTempDir(io::Error),
     DecodeResponse(serde_json::Error, String),
+    ExecuteCommand(io::Error, String),
+    ReadLine(io::Error),
     GetCache(GetCacheError),
     GetToken,
+    NoEditor,
+    ParseCache(toml::de::Error),
     ReadFile(io::Error, PathBuf),
     WriteFile(io::Error, PathBuf),
     ExecuteRequest(reqwest::Error),
@@ -143,7 +197,12 @@ impl Display for MainError {
                 path.display()
             ),
             Self::CreateRuntime(error) => write!(f, "failed to create runtime: {error}"),
+            Self::CreateTempDir(error) => write!(f, "failed to create temporary directory: {error}"),
             Self::DecodeResponse(error, response) => write!(f, "failed to decode response `{response}`: {error}"),
+            Self::ExecuteCommand(error, command) => write!(f, "failed to execute command `{command}`: {error}"),
+            Self::ReadLine(error) => write!(f, "failed to read input: {error}"),
+            Self::NoEditor => f.write_str("failed to get editor: flag `--editor` was not specified and both environment variables `VISUAL` and `EDITOR` were not set"),
+            Self::ParseCache(error) => write!(f, "failed to read cache: {error}\nRun `neighborhood_cli project <project> post ship -m <message> -e` to edit"),
             Self::ReadFile(error, path) => write!(
                 f,
                 "failed to read file at path `{}`: {error}",
@@ -174,7 +233,6 @@ mod tests {
                 if let Some(from) = option_env!($from) {
                     assert_eq!($val, from);
                 }
-                pp
             };
         }
         test_metadata_sync!(NAME, "CARGO_PKG_NAME");

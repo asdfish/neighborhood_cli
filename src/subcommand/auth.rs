@@ -14,7 +14,7 @@ pub fn execute(mut args: ArgMatches) -> Result<(), MainError> {
         .build()
         .map_err(MainError::CreateClient)
         .and_then(|client| match args.subcommand().unwrap() {
-            ("send", _) => {
+            ("send" | "signup", _) => {
                 #[derive(Serialize)]
                 struct Signup<'a> {
                     email: &'a str,
@@ -39,9 +39,6 @@ pub fn execute(mut args: ArgMatches) -> Result<(), MainError> {
                                 eprintln!("{message}");
                             })
                     })
-                // .map(|MessageResponse { message }| {
-                //     eprintln!("{message}");
-                // })
             }
             ("login", login_args) => {
                 #[derive(Serialize)]

@@ -8,6 +8,7 @@ pub fn execute(mut args: ArgMatches) -> Result<(), MainError> {
 
     match subcommand.as_str() {
         "auth" => auth::execute(args),
+        "project" => project::execute(args),
         _ => unreachable!(),
     }
 }

@@ -12,7 +12,7 @@ use {
 pub struct PathCache {
     root: Option<PathBuf>,
     token: Option<PathBuf>,
-    ship: Option<PathBuf>,
+    release: Option<PathBuf>,
 }
 impl PathCache {
     fn set_root_raw(root: &mut Option<PathBuf>) -> Option<&Path> {
@@ -49,15 +49,15 @@ impl PathCache {
     pub fn set_token(&mut self) -> Result<&Path, GetCacheError> {
         Self::set_branch(&mut self.root, &mut self.token, "token")
     }
-    pub fn set_ship(&mut self) -> Result<&Path, GetCacheError> {
-        Self::set_branch(&mut self.root, &mut self.ship, "ship")
+    pub fn set_release(&mut self) -> Result<&Path, GetCacheError> {
+        Self::set_branch(&mut self.root, &mut self.release, "release")
     }
 
     pub fn get_token(&self) -> Result<&Path, GetCacheError> {
         self.token.as_deref().ok_or(GetCacheError)
     }
-    pub fn get_ship(&self) -> Result<&Path, GetCacheError> {
-        self.ship.as_deref().ok_or(GetCacheError)
+    pub fn get_release(&self) -> Result<&Path, GetCacheError> {
+        self.release.as_deref().ok_or(GetCacheError)
     }
 
     pub fn into_root(mut self) -> Result<PathBuf, GetCacheError> {
@@ -88,8 +88,8 @@ impl PathCache {
     pub fn into_token(mut self) -> Result<PathBuf, GetCacheError> {
         Self::into_branch(&mut self.root, &mut self.token, "token")
     }
-    pub fn into_ship(mut self) -> Result<PathBuf, GetCacheError> {
-        Self::into_branch(&mut self.root, &mut self.ship, "ship")
+    pub fn into_release(mut self) -> Result<PathBuf, GetCacheError> {
+        Self::into_branch(&mut self.root, &mut self.release, "release")
     }
 
     pub fn read_token(&mut self) -> Result<String, MainError> {
