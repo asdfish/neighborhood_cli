@@ -19,11 +19,16 @@ Then run ~neighborhood_cli help~ to see all subcommands.
 
 You can post devlogs with
 #+begin_src shell
-  neighborhood_cli -a devlog --app <STRING> --message <STRING> --photobooth <PATH> --demo <PATH>
+  neighborhood_cli project <project> post -a devlog --message <STRING> --photobooth <PATH> --demo <PATH>
 #+end_src
 
-* Recommendations
+** Ship releases
 
-It is recommended to make aliases for the ~neighborhood_cli~ command and the ~neighborhood_cli ship~ subcommand arguments.
+You can ship releases with
+#+begin_src shell
+  neighborhood_cli project <project> post ship -m 'foo'
+  # use text editor for form
+  neighborhood_cli project <project> post ship -m 'foo' -e
+#+end_src
 
 [[https://neighborhood.hackclub.com/][https://images.fillout.com/orgid-81/flowpublicid-2d6RsxRU3ius/widgetid-gHXJ/wLL8YM3u5TEHNwmmey7cHo/summer25.png?a=4hit9PajYRUKJJYwW78gvU]]
