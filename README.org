@@ -7,7 +7,7 @@
 To use most of the sub commands, you will first need to authenticate yourself.
 
 #+begin_src shell
-  # Send otp to EMAIL
+  # Send otp to `EMAIL`
   neighborhood_cli auth <EMAIL> send
   # Login to `EMAIL` the otp of `INT`
   neighborhood_cli auth <EMAIL> login <INT>
@@ -24,6 +24,6 @@ You can post devlogs with
 
 * Recommendations
 
-Since the name ~neighborhood_cli~ is very long, it is recommended to either make an alias for the command or rename the executable.
+It is recommended to make aliases for the ~neighborhood_cli~ command and the ~neighborhood_cli ship~ subcommand arguments.
 
 [[https://neighborhood.hackclub.com/][https://images.fillout.com/orgid-81/flowpublicid-2d6RsxRU3ius/widgetid-gHXJ/wLL8YM3u5TEHNwmmey7cHo/summer25.png?a=4hit9PajYRUKJJYwW78gvU]]
