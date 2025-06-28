@@ -1,10 +1,10 @@
 use {
-    crate::{MainError, api::MessageResponse, cache::PathCache},
+    crate::{api::MessageResponse, cache::PathCache, MainError},
     clap::ArgMatches,
     futures_lite::future,
     reqwest::{
-        Client, Response,
         multipart::{Form, Part},
+        Client, Response,
     },
     serde::{Deserialize, Serialize},
     std::{
@@ -34,12 +34,12 @@ async fn upload(client: &Client, token: String, path: &str) -> Result<String, Ma
     );
     let file = if let Some(mime) = mime_guess::from_path(path).first() {
         file.mime_str(mime.essence_str())
-            .expect("the `mimi_guess` crate should be outputting valid mime strings")
+            .expect("the `mime_guess` crate should be outputting valid mime strings")
     } else {
         file
     };
 
-    eprintln!("Uploading {path}");
+    eprintln!("Uploading `{path}`");
     let UploadVideoResponse { url, message } = client
         .post("https://express.neighborhood.hackclub.com/upload-video")
         .multipart(Form::new().text("token", token).part("file", file))
@@ -54,7 +54,7 @@ async fn upload(client: &Client, token: String, path: &str) -> Result<String, Ma
             serde_json::from_str(&response)
                 .map_err(|error| MainError::DecodeResponse(error, response))
         })?;
-    eprintln!("Uploaded {path}");
+    eprintln!("Uploaded `{path}`");
 
     url.ok_or(MainError::Server(message))
 }
