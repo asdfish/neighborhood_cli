@@ -1,11 +1,16 @@
 mod api;
 mod cache;
+mod env;
 mod subcommand;
+mod value_parser;
 
 use {
-    crate::cache::GetCacheError,
+    crate::{
+        cache::GetCacheError,
+        value_parser::CommandValueParser,
+    },
     clap::{
-        builder::{Arg, Command},
+        builder::{Arg, Command, NonEmptyStringValueParser},
         ArgAction,
     },
     std::{
@@ -38,8 +43,10 @@ fn root_command() -> Command {
                     Arg::new("email")
                         .help("The email that will be used for authentication")
                         .value_name("EMAIL")
+                        .value_parser(NonEmptyStringValueParser::default())
                         .required(true),
                 )
+                .subcommand_required(true)
                 .subcommand(
                     Command::new("send")
                         .visible_alias("signup")
@@ -52,6 +59,7 @@ fn root_command() -> Command {
                             Arg::new("otp")
                                 .help("The received otp")
                                 .value_name("INT")
+                                .value_parser(NonEmptyStringValueParser::default())
                                 .required(true),
                         ),
                 ),
@@ -65,6 +73,7 @@ fn root_command() -> Command {
                         .short('a')
                         .long("app")
                         .value_name("STRING")
+                        .value_parser(NonEmptyStringValueParser::default())
                         .required(true),
                 )
                 .arg(
@@ -73,6 +82,7 @@ fn root_command() -> Command {
                         .short('p')
                         .long("photobooth")
                         .value_name("PATH")
+                        .value_parser(NonEmptyStringValueParser::default())
                         .required(true),
                 )
                 .arg(
@@ -81,6 +91,7 @@ fn root_command() -> Command {
                         .short('d')
                         .long("demo")
                         .value_name("PATH")
+                        .value_parser(NonEmptyStringValueParser::default())
                         .required(true),
                 )
                 .arg(
@@ -89,8 +100,43 @@ fn root_command() -> Command {
                         .short('m')
                         .long("message")
                         .value_name("STRING")
+                        .value_parser(NonEmptyStringValueParser::default())
                         .required(true),
                 )
+        )
+        .subcommand(
+            Command::new("ship")
+                .about("Ship a new release")
+                .visible_alias("release")
+                .arg(
+                    Arg::new("key")
+                        .required(true)
+                        .value_name("STRING")
+                        .value_parser(NonEmptyStringValueParser::default())
+                        .help("The key to a cached config")
+                )
+                .subcommand_required(true)
+                .subcommand(
+                    Command::new("edit")
+                        .about("Edit this cache")
+                        .arg(
+                            Arg::new("editor")
+                                .help("The editor used to edit the config. This is required unless `$EDITOR` or `$VISUAL` is set")
+                                .short('e')
+                                .long("editor")
+                                .value_name("COMMAND")
+                                .value_parser(CommandValueParser)
+                                .required(!(env::contains_var(c"EDITOR") || env::contains_var(c"VISUAL")))
+                        )
+                        .arg(
+                            Arg::new("arg")
+                                .help("Arguments passed to the editor like this: <EDITOR> <ARGS> <FILE>")
+                                .short('a')
+                                .long("arg")
+                                .value_name("STRING")
+                        )
+                )
+                .subcommand(Command::new("post").about("Post this cache"))
         )
 }
 
