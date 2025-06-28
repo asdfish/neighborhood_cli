@@ -14,7 +14,7 @@ use {
 };
 
 const NAME: &str = "neighborhood_cli";
-const VERSION: &str = "0.1.0";
+const VERSION: &str = "1.0.0";
 
 fn root_command() -> Command {
     Command::new(NAME)
