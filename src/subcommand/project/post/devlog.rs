@@ -1,10 +1,10 @@
 use {
-    crate::{api::MessageResponse, cache::PathCache, MainError},
+    crate::{MainError, api::MessageResponse, cache::PathCache},
     clap::ArgMatches,
     futures_lite::future,
     reqwest::{
-        multipart::{Form, Part},
         Client, Response,
+        multipart::{Form, Part},
     },
     serde::{Deserialize, Serialize},
     std::{

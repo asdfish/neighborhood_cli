@@ -1,21 +1,17 @@
 use {
-    crate::{cache::PathCache, env, MainError},
+    crate::{MainError, cache::PathCache, env},
     clap::ArgMatches,
     serde::{Deserialize, Deserializer, Serialize},
     std::{
         borrow::Cow,
         ffi::OsString,
         fs::{self, DirBuilder, File, OpenOptions},
-        io::{stdin, Write},
+        io::{Write, stdin},
         path::PathBuf,
         process::{Command, Stdio},
     },
     tempfile::tempdir,
-    toml_edit::{
-        Date,
-        DocumentMut,
-        TomlError,
-    }
+    toml_edit::{Date, DocumentMut, TomlError},
 };
 
 enum Either<L, R> {
@@ -75,10 +71,7 @@ where
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 struct Cache {
-    #[serde(
-        deserialize_with = "deserialize_non_empty_string",
-        skip_deserializing,
-    )]
+    #[serde(deserialize_with = "deserialize_non_empty_string", skip_deserializing)]
     changes_made: String,
     #[serde(deserialize_with = "deserialize_non_empty_string")]
     code_url: String,
@@ -201,13 +194,14 @@ pub fn execute(mut args: ArgMatches, name: &str, _async_upload: bool) -> Result<
                         fs::write(&path, contents.as_ref())
                             .map_err(|error| MainError::WriteFile(error, path.clone()))?;
 
-                        let command = args.remove_one::<String>("editor")
+                        let command = args
+                            .remove_one::<String>("editor")
                             .map(OsString::from)
                             .map(Cow::Owned)
                             .or_else(|| {
                                 // SAFETY: this is single threaded
                                 unsafe { env::var(c"VISUAL") }
-                                .or_else(|| unsafe { env::var(c"EDITOR") })
+                                    .or_else(|| unsafe { env::var(c"EDITOR") })
                                     .map(Cow::Borrowed)
                             })
                             .ok_or(MainError::NoEditor)?;
@@ -222,7 +216,9 @@ pub fn execute(mut args: ArgMatches, name: &str, _async_upload: bool) -> Result<
 
                         let mut line = String::with_capacity(3);
                         loop {
-                            command.output().map_err(|error| MainError::ExecuteCommand(error, format!("{command:?}")))?;
+                            command.output().map_err(|error| {
+                                MainError::ExecuteCommand(error, format!("{command:?}"))
+                            })?;
 
                             let cache = fs::read_to_string(&path)
                                 .map_err(|error| MainError::ReadFile(error, path.clone()))?;
@@ -234,17 +230,19 @@ pub fn execute(mut args: ArgMatches, name: &str, _async_upload: bool) -> Result<
                             }) {
                                 Ok(document) => {
                                     let _ = fs::write(&path, cache);
-                                    return Ok(document);
+                                    break Ok(Some(document));
                                 }
                                 Err(error) => {
                                     eprintln!("{error}");
                                     loop {
                                         eprintln!("Retry: (yes/no)?: ");
                                         line.clear();
-                                        stdin().read_line(&mut line).map_err(MainError::ReadLine)?;
+                                        stdin()
+                                            .read_line(&mut line)
+                                            .map_err(MainError::ReadLine)?;
                                         match line.trim() {
-                                            "y" | "yes" => break,
-                                            "n" | "no" => return todo!(),
+                                            "y" | "yes" => continue,
+                                            "n" | "no" => return Ok(None),
                                             response => eprintln!("unknown option `{response}`"),
                                         }
                                     }
@@ -258,14 +256,15 @@ pub fn execute(mut args: ArgMatches, name: &str, _async_upload: bool) -> Result<
                 fs::read_to_string(&cache)
                     .map_err(|error| MainError::ReadFile(error, cache))
                     .and_then(|cache| validate(&cache).map_err(MainError::ParseCache))
+                    .map(Some)
             }
         })
-        .map(|_| {})
-        // .map(|cache| cache.convert())
-        // .and_then(|cache| toml::from_str::<Cache>(&cache).map_err(MainError::ParseCache))
-        // .map(|mut cache| {
-        //     cache.changes_made = args.remove_one("message").unwrap();
-        //     cache
-        // })
-        // .map(|cache| eprintln!("{cache:?}"))
+        .map(|mut document| {})
+    // .map(|cache| cache.convert())
+    // .and_then(|cache| toml::from_str::<Cache>(&cache).map_err(MainError::ParseCache))
+    // .map(|mut cache| {
+    //     cache.changes_made = args.remove_one("message").unwrap();
+    //     cache
+    // })
+    // .map(|cache| eprintln!("{cache:?}"))
 }

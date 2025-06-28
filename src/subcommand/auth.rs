@@ -1,5 +1,5 @@
 use {
-    crate::{api::MessageResponse, cache::PathCache, MainError},
+    crate::{MainError, api::MessageResponse, cache::PathCache},
     clap::ArgMatches,
     reqwest::blocking::{Client, Response},
     serde::{Deserialize, Serialize},

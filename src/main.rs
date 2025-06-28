@@ -6,8 +6,8 @@ mod subcommand;
 use {
     crate::cache::GetCacheError,
     clap::{
-        builder::{Arg, Command, NonEmptyStringValueParser, Resettable},
         ArgAction,
+        builder::{Arg, Command, NonEmptyStringValueParser, Resettable},
     },
     std::{
         fmt::{self, Display, Formatter},
