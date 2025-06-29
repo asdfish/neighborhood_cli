@@ -306,29 +306,24 @@ pub fn execute(
         release_config.changes_made = message;
         release_config.token = token;
 
-        // runtime.block_on(async {
-        //     client
-        //         .post("https://neighborhood.hackclub.com/api/shipApp")
-        //         .json(&release_config)
-        //         .send()
-        //         .await
-        //         .and_then(Response::error_for_status)
-        //         .map_err(MainError::ExecuteRequest)?
-        //         .text()
-        //         .await
-        //         .map_err(MainError::ExecuteRequest)
-        //         .and_then(|response| {
-        //             serde_json::from_str(&response)
-        //                 .map_err(|error| MainError::DecodeResponse(error, response.to_string()))
-        //         })
-        //         .map(|MessageResponse { message }| {
-        //             eprintln!("{message}");
-        //         })
-        // })
-        // println!("{:?}", serde_json::from_str(&release_config));
-
-        println!("{}", serde_json::to_string(&release_config).unwrap());
-
-        todo!()
+        runtime.block_on(async {
+            client
+                .post("https://neighborhood.hackclub.com/api/shipApp")
+                .json(&release_config)
+                .send()
+                .await
+                .and_then(Response::error_for_status)
+                .map_err(MainError::ExecuteRequest)?
+                .text()
+                .await
+                .map_err(MainError::ExecuteRequest)
+                .and_then(|response| {
+                    serde_json::from_str(&response)
+                        .map_err(|error| MainError::DecodeResponse(error, response.to_string()))
+                })
+                .map(|MessageResponse { message }| {
+                    eprintln!("{message}");
+                })
+        })
     })
 }
