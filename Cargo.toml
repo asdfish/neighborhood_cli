@@ -17,3 +17,4 @@ tempfile = { version = "3.20.0", default-features = false }
 tokio = { version = "1.45.1", features = ["fs", "rt"], default-features = false }
 # toml = { version = "0.8.23", default-features = false, features = ["parse"] }
 toml_edit = { version = "0.22.27", default-features = false, features = ["display", "parse", "serde"] }
+zeroize = { version = "1.8.1", default-features = false, features = ["alloc"] }

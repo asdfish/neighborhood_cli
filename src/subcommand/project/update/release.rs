@@ -1,8 +1,8 @@
 use {
     crate::{
-        api::MessageResponse,
         MainError,
-        cache::PathCache,
+        api::MessageResponse,
+        cache::{RELEASE, read_token},
         env,
         subcommand::project::update::{UploadApi, UploadImages},
     },
@@ -71,7 +71,8 @@ struct ReleaseConfig {
     screenshots: Vec<String>,
     #[serde(
         deserialize_with = "deserialize_vec_non_empty_string",
-        skip_serializing
+        skip_serializing,
+        skip_deserializing
     )]
     new_screenshot_paths: Vec<String>,
 
@@ -115,7 +116,7 @@ playableUrl = "" # Link that showcases your project. Can be a live demo like a w
 # You should not use this to add new screenshots, instead you should only use this to remove screenshots
 screenshots = []
 # An array of paths that will be uploaded and then added to the screenshot array above
-newScreenshotPaths = []
+# newScreenshotPaths = []
 
 # Personal information
 addressLine1 = ""
@@ -143,24 +144,19 @@ fn validate(release_config: &str) -> Result<DocumentMut, TomlError> {
     })
 }
 
-pub fn execute(mut args: ArgMatches, name: &str, async_upload: bool, message: String) -> Result<(), MainError> {
-    let mut path_cache = PathCache::default();
-    path_cache.set_release()?;
-    path_cache.set_token()?;
-    let token = path_cache.read_token()?;
-    let release_config = path_cache.get_release();
-    let mut release_config = release_config
-        .map_err(MainError::GetCache)
-        .and_then(|release| {
-            if !release.is_dir() {
-                match DirBuilder::new().recursive(true).create(&release) {
-                    Ok(()) => Ok(release.to_path_buf()),
-                    Err(error) => Err(MainError::CreateDirectory(error, release.to_path_buf())),
-                }
-            } else {
-                Ok(release.to_path_buf())
-            }
-        })?;
+pub fn execute(
+    mut args: ArgMatches,
+    name: &str,
+    async_upload: bool,
+    message: String,
+) -> Result<(), MainError> {
+    let token = read_token()?;
+    let release = RELEASE.as_ref().ok_or(MainError::GetCache)?;
+    if !release.is_dir() {
+        DirBuilder::new().recursive(true).create(&release)
+            .map_err(|error| MainError::CreateDirectory(error, Cow::Borrowed(release)))?;
+    }
+    let mut release_config = release.to_path_buf();
     release_config.push(name);
     release_config.set_extension("toml");
 
@@ -180,7 +176,7 @@ pub fn execute(mut args: ArgMatches, name: &str, async_upload: bool, message: St
                 path.set_extension("toml");
 
                 fs::write(&path, contents.as_ref())
-                    .map_err(|error| MainError::WriteFile(error, path.clone()))?;
+                    .map_err(|error| MainError::WriteFile(error, Cow::Owned(path.clone())))?;
 
                 let command = args
                     .remove_one::<String>("editor")
@@ -209,7 +205,7 @@ pub fn execute(mut args: ArgMatches, name: &str, async_upload: bool, message: St
                     })?;
 
                     let release_config = fs::read_to_string(&path)
-                        .map_err(|error| MainError::ReadFile(error, path.clone()))?;
+                        .map_err(|error| MainError::ReadFile(error, Cow::Owned(path.clone())))?;
 
                     match release_config.parse::<DocumentMut>().and_then(|document| {
                         toml_edit::de::from_str::<ReleaseConfig>(&release_config)
@@ -236,51 +232,50 @@ pub fn execute(mut args: ArgMatches, name: &str, async_upload: bool, message: St
                     }
                 }
             }
-            Err(error) => Err(MainError::ReadFile(error, release_config.clone())),
+            Err(error) => Err(MainError::ReadFile(error, Cow::Owned(release_config.clone()))),
         }
     } else {
         fs::read_to_string(&release_config)
-            .map_err(|error| MainError::ReadFile(error, release_config.clone()))
+            .map_err(|error| MainError::ReadFile(error, Cow::Owned(release_config.clone())))
             .and_then(|release_config| {
                 validate(&release_config).map_err(MainError::ParseReleaseConfig)
             })
     }
     .and_then(|mut document| {
-        let Some(Item::Value(Value::Array(new_screenshot_paths))) =
-            document.remove("newScreenshotPaths")
-        else {
-            unreachable!()
-        };
-
-        let request = UploadImages::new(
-            new_screenshot_paths
-                .into_iter()
-                .flat_map(|val| match val {
-                    Value::String(string) => Some(string),
-                    _ => None,
-                })
-                .map(Formatted::into_value),
-        );
-
         let runtime = runtime::Builder::new_current_thread()
             .enable_io()
             .enable_time()
             .build()
             .map_err(MainError::CreateRuntime)?;
         let client = Client::builder().build().map_err(MainError::CreateClient)?;
-        let urls = runtime.block_on(request.upload(&client, token.clone()))?;
 
-        document
-            .as_item_mut()
-            .as_table_mut()
-            .and_then(|table| table.get_mut("screenshots"))
-            .map(|screenshots| {
-                if let Item::Value(Value::Array(screenshots)) = screenshots {
-                    urls.into_iter()
-                        .filter(|url| !url.is_empty())
-                        .for_each(|url| screenshots.push(url))
-                }
-            });
+        if let Some(Item::Value(Value::Array(new_screenshot_paths))) =
+            document.remove("newScreenshotPaths")
+        {
+            let request = UploadImages::new(
+                new_screenshot_paths
+                    .into_iter()
+                    .flat_map(|val| match val {
+                        Value::String(string) => Some(string),
+                        _ => None,
+                    })
+                    .map(Formatted::into_value),
+            );
+
+            let urls = runtime.block_on(request.upload(&client, token.clone()))?;
+
+            document
+                .as_item_mut()
+                .as_table_mut()
+                .and_then(|table| table.get_mut("screenshots"))
+                .map(|screenshots| {
+                    if let Item::Value(Value::Array(screenshots)) = screenshots {
+                        urls.into_iter()
+                            .filter(|url| !url.is_empty())
+                            .for_each(|url| screenshots.push(url))
+                    }
+                });
+        }
 
         fs::write(&release_config, document.to_string());
         let mut release_config = toml_edit::de::from_document::<ReleaseConfig>(document)
@@ -307,8 +302,6 @@ pub fn execute(mut args: ArgMatches, name: &str, async_upload: bool, message: St
                 .map(|MessageResponse { message }| {
                     eprintln!("{message}");
                 })
-        });
-
-        Ok(())
+        })
     })
 }

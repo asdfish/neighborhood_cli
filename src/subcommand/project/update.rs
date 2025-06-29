@@ -11,6 +11,7 @@ use {
     },
     serde::{de::DeserializeOwned, Deserialize},
     std::{
+        borrow::Cow,
         path::{self, Path, PathBuf},
         pin::{pin, Pin},
         sync::LazyLock,
@@ -25,7 +26,7 @@ where
     let file = Part::bytes(
         fs::read(path.as_ref())
             .await
-            .map_err(|err| MainError::ReadFile(err, PathBuf::from(path.as_ref())))?,
+            .map_err(|err| MainError::ReadFile(err, Cow::Owned(PathBuf::from(path.as_ref()))))?,
     )
     .file_name(
         path.as_ref()

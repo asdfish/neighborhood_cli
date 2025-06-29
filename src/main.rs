@@ -4,15 +4,16 @@ mod env;
 mod subcommand;
 
 use {
-    crate::cache::GetCacheError,
+    cfg_if::cfg_if,
     clap::{
         builder::{Arg, Command, NonEmptyStringValueParser, Resettable},
         ArgAction,
     },
     std::{
-        fmt::{self, Display, Formatter},
+        borrow::Cow,
+        fmt::{self, Display, Formatter, Write},
         io,
-        path::PathBuf,
+        path::{Path, PathBuf},
         process::ExitCode,
     },
     toml_edit::TomlError,
@@ -156,19 +157,20 @@ fn main() -> ExitCode {
 #[derive(Debug)]
 pub enum MainError {
     CreateClient(reqwest::Error),
-    CreateDirectory(io::Error, PathBuf),
+    CreateDirectory(io::Error, Cow<'static, Path>),
     CreateFile(io::Error, PathBuf),
     CreateRuntime(io::Error),
     CreateTempDir(io::Error),
     DecodeResponse(serde_json::Error, String),
     ExecuteCommand(io::Error, String),
     ReadLine(io::Error),
-    GetCache(GetCacheError),
+    GetCache,
     GetToken,
     NoEditor,
+    NonExistantProject(String),
     ParseReleaseConfig(TomlError),
-    ReadFile(io::Error, PathBuf),
-    WriteFile(io::Error, PathBuf),
+    ReadFile(io::Error, Cow<'static, Path>),
+    WriteFile(io::Error, Cow<'static, Path>),
     ExecuteRequest(reqwest::Error),
     Server(Option<String>),
 }
@@ -192,6 +194,7 @@ impl Display for MainError {
             Self::ExecuteCommand(error, command) => write!(f, "failed to execute command `{command}`: {error}"),
             Self::ReadLine(error) => write!(f, "failed to read input: {error}"),
             Self::NoEditor => f.write_str("failed to get editor: flag `--editor` was not specified and both environment variables `VISUAL` and `EDITOR` were not set"),
+            Self::NonExistantProject(project) => write!(f, "project `{project}` does not exist"),
             Self::ParseReleaseConfig(error) => write!(f, "failed to read release config:\n{error}\nRun `neighborhood_cli project <project> post ship -m <message> -e` to edit"),
             Self::ReadFile(error, path) => write!(
                 f,
@@ -203,17 +206,36 @@ impl Display for MainError {
                 "failed to write to file at path `{}`: {error}",
                 path.display()
             ),
-            Self::GetCache(error) => error.fmt(f),
+            Self::GetCache =>
+{
+        f.write_str("failed to get the cache directory, please ensure that you have the following environment variables set:")
+                .and_then(|_| {
+                    cfg_if! {
+                        if #[cfg(target_os = "macos")] {
+                            const ENV_VARS: &[&str] = &["HOME"];
+                        } else if #[cfg(unix)] {
+                            const ENV_VARS: &[&str] = &["XDG_CACHE_HOME", "HOME"];
+                        } else if #[cfg(windows)] {
+                            const ENV_VARS: &[&str] = &["LOCALAPPDATA"];
+                        } else {
+                            const ENV_VARS: &[&str] = &[];
+                        }
+                    }
+
+                    ENV_VARS
+                        .iter()
+                        .try_for_each(|env_var| {
+                            f
+                                .write_str(env_var)
+                                .and_then(|_| f.write_char('\n'))
+                        })
+                })
+            }
             Self::GetToken => f.write_str("failed to get token, please run `neighborhood_cli auth <EMAIL> send` and `neighborhood_cli auth <EMAIL> login <OTP>` first"),
             Self::ExecuteRequest(error) => write!(f, "failed to execute request: {error}"),
             Self::Server(Some(error)) => write!(f, "the backend responded with an error: {error}"),
             Self::Server(None) => f.write_str("the backend responded with an unknown error"),
         }
-    }
-}
-impl From<GetCacheError> for MainError {
-    fn from(error: GetCacheError) -> Self {
-        Self::GetCache(error)
     }
 }
 

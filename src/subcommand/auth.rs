@@ -1,10 +1,11 @@
 use {
-    crate::{MainError, api::MessageResponse, cache::PathCache},
+    crate::{api::MessageResponse, cache::TOKEN, MainError},
     clap::ArgMatches,
     reqwest::blocking::{Client, Response},
     serde::{Deserialize, Serialize},
     std::{
-        fs::{DirBuilder, File},
+        borrow::Cow,
+        fs::{self, DirBuilder, File},
         io::Write,
     },
 };
@@ -73,25 +74,24 @@ pub fn execute(mut args: ArgMatches) -> Result<(), MainError> {
                             })
                             .inspect(|VerifyOtpResponse { message, .. }| eprintln!("{message}"))
                             .and_then(|VerifyOtpResponse { token, .. }| {
-                                PathCache::default()
-                                    .into_token()
-                                    .map_err(MainError::GetCache)
-                                    .and_then(|path| {
-                                        match DirBuilder::new()
-                                            .recursive(true)
-                                            .create(&path.parent().unwrap_or(&path))
-                                        {
-                                            Ok(_) => Ok(path),
-                                            Err(err) => Err(MainError::CreateDirectory(err, path)),
-                                        }
-                                    })
-                                    .and_then(|path| match File::create(&path) {
-                                        Ok(mut file) => file
-                                            .write_all(token.as_bytes())
-                                            .and_then(|_| file.flush())
-                                            .map_err(|err| MainError::WriteFile(err, path)),
-                                        Err(err) => Err(MainError::CreateFile(err, path)),
-                                    })
+                                let path = TOKEN.as_ref().ok_or(MainError::GetCache)?;
+
+                                if let Some(parent) = path.parent() {
+                                    if !parent.is_dir() {
+                                        DirBuilder::new().recursive(true).create(parent).map_err(
+                                            |error| {
+                                                MainError::CreateDirectory(
+                                                    error,
+                                                    Cow::Borrowed(path),
+                                                )
+                                            },
+                                        )?;
+                                    }
+                                }
+
+                                fs::write(path, token).map_err(|error| {
+                                    MainError::WriteFile(error, Cow::Borrowed(path))
+                                })
                             })
                     })
             }

@@ -1,7 +1,7 @@
 use {
     crate::{
         api::MessageResponse,
-        cache::PathCache,
+        cache::read_token,
         subcommand::project::update::{UploadApi, UploadVideo},
         MainError,
     },
@@ -28,7 +28,7 @@ pub fn execute(
     let photobooth = args.remove_one::<String>("photobooth").unwrap();
     let demo = args.remove_one::<String>("demo").unwrap();
 
-    let token = PathCache::default().read_token()?;
+    let token = read_token()?;
 
     let runtime = runtime::Builder::new_current_thread()
         .enable_io()
