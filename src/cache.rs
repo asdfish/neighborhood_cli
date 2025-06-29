@@ -80,9 +80,11 @@ pub async fn get_project_token(project: Cow<'_, str>) -> Result<String, MainErro
             .send()
             .await
             .and_then(Response::error_for_status)
+            .map_err(reqwest::Error::without_url)
             .map_err(MainError::ExecuteRequest)?
             .text()
             .await
+            .map_err(reqwest::Error::without_url)
             .map_err(MainError::ExecuteRequest)
             .and_then(|response| {
                 serde_json::from_str(&response)
