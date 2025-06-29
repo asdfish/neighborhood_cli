@@ -7,10 +7,7 @@ use {
     clap::ArgMatches,
     reqwest::blocking::{Client, Response},
     serde::{Deserialize, Serialize},
-    std::{
-        borrow::Cow,
-        fs::{self, DirBuilder},
-    },
+    std::{borrow::Cow, fs::DirBuilder},
 };
 
 pub fn execute(mut args: ArgMatches) -> Result<(), MainError> {

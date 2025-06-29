@@ -718,6 +718,7 @@ dependencies = [
  "dirs",
  "futures-lite",
  "mime_guess",
+ "pin-project-lite",
  "reqwest",
  "serde",
  "serde_json",

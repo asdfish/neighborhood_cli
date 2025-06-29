@@ -223,7 +223,7 @@ pub fn execute(mut args: ArgMatches, name: &str, message: String) -> Result<(), 
                             .map_err(TomlError::from)
                     }) {
                         Ok(document) => {
-                            write_file(Cow::Owned(path.clone()), release_config.as_bytes());
+                            write_file(Cow::Owned(path.clone()), release_config.as_bytes())?;
                             if no_confirm {
                                 break 'doc Ok(document);
                             }

@@ -13,7 +13,7 @@ use {
         borrow::Cow,
         fmt::{self, Display, Formatter, Write},
         io,
-        path::{Path, PathBuf},
+        path::Path,
         process::ExitCode,
     },
     toml_edit::TomlError,
