@@ -167,7 +167,7 @@ pub fn execute(mut args: ArgMatches, name: &str, message: String) -> Result<(), 
     release_config.push(name);
     release_config.set_extension("toml");
 
-    let yes: bool = args.remove_one("no-confirm").unwrap_or_default();
+    let no_confirm: bool = args.remove_one("no-confirm").unwrap_or_default();
 
     if !release_config.exists() || args.remove_one("edit").unwrap_or_default() {
         let contents = if !release_config.exists() || args.remove_one("reset").unwrap_or_default() {
@@ -184,7 +184,9 @@ pub fn execute(mut args: ArgMatches, name: &str, message: String) -> Result<(), 
                 path.push(name);
                 path.set_extension("toml");
 
-                write_file(Cow::Owned(path.clone()), contents.as_bytes())?;
+                if let Err(error) = fs::write(&path, contents.as_ref()) {
+                    return Err(MainError::WriteFile(error, Cow::Owned(path)));
+                }
 
                 let command = args
                     .remove_one::<String>("editor")
@@ -222,12 +224,14 @@ pub fn execute(mut args: ArgMatches, name: &str, message: String) -> Result<(), 
                     }) {
                         Ok(document) => {
                             write_file(Cow::Owned(path.clone()), release_config.as_bytes());
+                            if no_confirm {
+                                break 'doc Ok(document);
+                            }
                             loop {
                                 eprintln!("Submit: (yes/no)?: {document}");
                                 line.clear();
                                 stdin().read_line(&mut line).map_err(MainError::ReadLine)?;
                                 match line.trim() {
-                                    _ if yes => break 'doc Ok(document),
                                     "y" | "yes" => break 'doc Ok(document),
                                     "n" | "no" => return Ok(()),
                                     response => eprintln!("unknown option `{response}`"),
@@ -236,12 +240,14 @@ pub fn execute(mut args: ArgMatches, name: &str, message: String) -> Result<(), 
                         }
                         Err(error) => {
                             eprintln!("{error}");
+                            if no_confirm {
+                                return Ok(());
+                            }
                             loop {
                                 eprintln!("Exit: (yes/no)?: ");
                                 line.clear();
                                 stdin().read_line(&mut line).map_err(MainError::ReadLine)?;
                                 match line.trim() {
-                                    _ if yes => return Ok(()),
                                     "y" | "yes" => return Ok(()),
                                     "n" | "no" => break,
                                     response => eprintln!("unknown option `{response}`"),
