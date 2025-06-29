@@ -162,6 +162,8 @@ pub fn execute(
     release_config.push(name);
     release_config.set_extension("toml");
 
+    let yes: bool = args.remove_one("no-confirm").unwrap_or_default();
+
     if !release_config.exists() || args.remove_one("edit").unwrap_or_default() {
         let contents = if !release_config.exists() || args.remove_one("reset").unwrap_or_default() {
             Ok(Cow::Borrowed(INITIAL_RELEASE_CONFIG))
@@ -201,7 +203,7 @@ pub fn execute(
                     .arg(&path);
 
                 let mut line = String::with_capacity(3);
-                loop {
+                'doc: loop {
                     command.output().map_err(|error| {
                         MainError::ExecuteCommand(error, format!("{command:?}"))
                     })?;
@@ -216,17 +218,26 @@ pub fn execute(
                     }) {
                         Ok(document) => {
                             let _ = fs::write(&path, release_config);
-                            break Ok(document);
+                            loop {
+                                eprintln!("Submit: (yes/no)?: {document}");
+                                line.clear();
+                                stdin().read_line(&mut line).map_err(MainError::ReadLine)?;
+                                match line.trim() {
+                                    "y" | "yes" | _ if yes => break 'doc Ok(document),
+                                    "n" | "no" => return Ok(()),
+                                    response => eprintln!("unknown option `{response}`"),
+                                }
+                            }
                         }
                         Err(error) => {
                             eprintln!("{error}");
                             loop {
-                                eprintln!("Retry: (yes/no)?: ");
+                                eprintln!("Exit: (yes/no)?: ");
                                 line.clear();
                                 stdin().read_line(&mut line).map_err(MainError::ReadLine)?;
                                 match line.trim() {
-                                    "y" | "yes" => continue,
-                                    "n" | "no" => return Ok(()),
+                                    "y" | "yes" | _ if yes => return Ok(()),
+                                    "n" | "no" => break,
                                     response => eprintln!("unknown option `{response}`"),
                                 }
                             }
