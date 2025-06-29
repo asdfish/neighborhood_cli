@@ -6,15 +6,14 @@ use {
     clap::ArgMatches,
     futures_lite::stream::{self, StreamExt},
     reqwest::{
-        multipart::{Form, Part},
         Client, Response,
+        multipart::{Form, Part},
     },
-    serde::{de::DeserializeOwned, Deserialize},
+    serde::{Deserialize, de::DeserializeOwned},
     std::{
         borrow::Cow,
-        path::{self, Path, PathBuf},
-        pin::{pin, Pin},
-        sync::LazyLock,
+        path::{self, PathBuf},
+        pin::pin,
     },
     tokio::fs,
 };
@@ -56,12 +55,6 @@ pub trait UploadApi: Sized {
         client: &Client,
         token: String,
     ) -> impl Future<Output = Result<Self::Output, MainError>> {
-        #[derive(Deserialize)]
-        pub struct UploadResponse {
-            message: Option<String>,
-            url: Option<String>,
-        }
-
         async move {
             client
                 .post(Self::API)
@@ -172,7 +165,7 @@ pub fn execute(mut args: ArgMatches, name: &str) -> Result<(), MainError> {
 
     match subcommand.as_str() {
         "devlog" => devlog::execute(args, name, async_upload, message.as_str()),
-        "release" | "ship" => release::execute(args, name, async_upload, message),
+        "release" | "ship" => release::execute(args, name, message),
         _ => unreachable!(),
     }
 }

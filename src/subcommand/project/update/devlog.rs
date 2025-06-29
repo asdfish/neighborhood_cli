@@ -8,15 +8,10 @@ use {
     clap::ArgMatches,
     futures_lite::future,
     reqwest::{
-        multipart::{Form, Part},
         Client, Response,
     },
-    serde::{Deserialize, Serialize},
-    std::{
-        future::Future,
-        path::{self, PathBuf},
-    },
-    tokio::{fs, runtime},
+    serde::Serialize,
+    tokio::runtime,
 };
 
 pub fn execute(

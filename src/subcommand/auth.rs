@@ -5,8 +5,7 @@ use {
     serde::{Deserialize, Serialize},
     std::{
         borrow::Cow,
-        fs::{self, DirBuilder, File},
-        io::Write,
+        fs::{self, DirBuilder},
     },
 };
 

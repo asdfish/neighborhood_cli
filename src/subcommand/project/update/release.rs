@@ -12,9 +12,8 @@ use {
     std::{
         borrow::Cow,
         ffi::OsString,
-        fs::{self, DirBuilder, File, OpenOptions},
-        io::{Write, stdin},
-        iter,
+        fs::{self, DirBuilder},
+        io::stdin,
         path::PathBuf,
         process::{Command, Stdio},
     },
@@ -27,7 +26,7 @@ const ERROR: &str = "string cannot be empty";
 
 pub fn serialize_iso_8601<S>(date: &Date, serializer: S) -> Result<S::Ok, S::Error>
 where
-    S: Serializer
+    S: Serializer,
 {
     serializer.serialize_str(&date.to_string())
 }
@@ -78,6 +77,7 @@ struct ReleaseConfig {
 
     #[serde(deserialize_with = "deserialize_vec_non_empty_string")]
     screenshots: Vec<String>,
+    #[expect(dead_code)]
     #[serde(
         deserialize_with = "deserialize_vec_non_empty_string",
         skip_serializing,
@@ -154,16 +154,13 @@ fn validate(release_config: &str) -> Result<DocumentMut, TomlError> {
     })
 }
 
-pub fn execute(
-    mut args: ArgMatches,
-    name: &str,
-    async_upload: bool,
-    message: String,
-) -> Result<(), MainError> {
+pub fn execute(mut args: ArgMatches, name: &str, message: String) -> Result<(), MainError> {
     let token = read_token()?;
     let release = RELEASE.as_ref().ok_or(MainError::GetCache)?;
     if !release.is_dir() {
-        DirBuilder::new().recursive(true).create(&release)
+        DirBuilder::new()
+            .recursive(true)
+            .create(&release)
             .map_err(|error| MainError::CreateDirectory(error, Cow::Borrowed(release)))?;
     }
     let mut release_config = release.to_path_buf();
@@ -253,7 +250,10 @@ pub fn execute(
                     }
                 }
             }
-            Err(error) => Err(MainError::ReadFile(error, Cow::Owned(release_config.clone()))),
+            Err(error) => Err(MainError::ReadFile(
+                error,
+                Cow::Owned(release_config.clone()),
+            )),
         }
     } else {
         fs::read_to_string(&release_config)

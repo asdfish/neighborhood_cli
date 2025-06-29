@@ -1,17 +1,6 @@
-use std::{
-    ffi::{CStr, OsStr, c_char},
-    ops::Not,
-};
-
+use std::ffi::{CStr, OsStr, c_char};
 unsafe extern "C" {
     fn getenv(_: *const c_char) -> *const c_char;
-}
-
-/// # Safety
-///
-/// You should not call this when there are multiple threads since it can lead to a race condition.
-pub unsafe fn var_exists(var: &CStr) -> bool {
-    unsafe { getenv(var.as_ptr()) }.is_null().not()
 }
 
 /// # Safety

@@ -1,11 +1,9 @@
 use {
     crate::MainError,
-    cfg_if::cfg_if,
-    reqwest::{multipart::Form, Client, Response},
+    reqwest::{Client, Response},
     serde::Deserialize,
     std::{
         borrow::Cow,
-        fmt::{self, Display, Formatter, Write},
         fs::{self, DirBuilder},
         path::{Path, PathBuf},
         sync::LazyLock,
@@ -73,12 +71,6 @@ pub async fn get_project_token(project: Cow<'_, str>) -> Result<String, MainErro
     } else {
         let token = read_token()?;
 
-        use serde::Serialize;
-        #[derive(Serialize)]
-        struct Body {
-            token: String,
-        }
-
         Client::builder()
             .build()
             .map_err(MainError::CreateClient)?
@@ -106,11 +98,7 @@ pub async fn get_project_token(project: Cow<'_, str>) -> Result<String, MainErro
                         path.push(&name);
                         let _ = fs::write(path, &id);
 
-                        if name == project {
-                            Some(id)
-                        } else {
-                            accum
-                        }
+                        if name == project { Some(id) } else { accum }
                     })
                     .ok_or_else(|| MainError::NonExistantProject(project.into_owned()))
             })

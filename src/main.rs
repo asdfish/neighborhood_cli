@@ -6,7 +6,7 @@ mod subcommand;
 use {
     cfg_if::cfg_if,
     clap::{
-        builder::{Arg, Command, NonEmptyStringValueParser, Resettable},
+        builder::{Arg, Command, NonEmptyStringValueParser},
         ArgAction,
     },
     std::{
