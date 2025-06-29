@@ -724,7 +724,6 @@ dependencies = [
  "tempfile",
  "tokio",
  "toml_edit",
- "zeroize",
 ]
 
 [[package]]

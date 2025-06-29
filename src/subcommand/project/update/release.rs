@@ -2,7 +2,7 @@ use {
     crate::{
         MainError,
         api::MessageResponse,
-        cache::{RELEASE, read_token},
+        cache::{RELEASE, get_project_token, read_token},
         env,
         subcommand::project::update::{UploadApi, UploadImages},
     },
@@ -55,6 +55,8 @@ where
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 struct ReleaseConfig {
+    #[serde(skip_deserializing)]
+    app_id: String,
     #[serde(skip_deserializing)]
     token: String,
 
@@ -159,6 +161,7 @@ pub fn execute(
     let mut release_config = release.to_path_buf();
     release_config.push(name);
     release_config.set_extension("toml");
+    eprintln!("{release_config:?}");
 
     if !release_config.exists() || args.remove_one("edit").unwrap_or_default() {
         let contents = if !release_config.exists() || args.remove_one("reset").unwrap_or_default() {
@@ -277,10 +280,11 @@ pub fn execute(
                 });
         }
 
-        fs::write(&release_config, document.to_string());
+        let _ = fs::write(&release_config, document.to_string());
         let mut release_config = toml_edit::de::from_document::<ReleaseConfig>(document)
             .map_err(TomlError::from)
             .map_err(MainError::ParseReleaseConfig)?;
+        release_config.app_id = runtime.block_on(get_project_token(Cow::Borrowed(name)))?;
         release_config.changes_made = message;
         release_config.token = token;
 

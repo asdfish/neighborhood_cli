@@ -1,14 +1,15 @@
 use {
     crate::MainError,
     cfg_if::cfg_if,
+    reqwest::{multipart::Form, Client, Response},
+    serde::Deserialize,
     std::{
         borrow::Cow,
         fmt::{self, Display, Formatter, Write},
-        fs,
+        fs::{self, DirBuilder},
         path::{Path, PathBuf},
         sync::LazyLock,
     },
-    zeroize::{Zeroize, Zeroizing},
 };
 
 pub static ROOT: LazyLock<Option<PathBuf>> = LazyLock::new(|| {
@@ -36,130 +37,88 @@ pub static RELEASE: LazyLock<Option<PathBuf>> = LazyLock::new(|| {
     })
 });
 
-pub fn read_token() -> Result<String, MainError> {
-    TOKEN.as_ref().ok_or(MainError::GetCache).and_then(|path| {
-        fs::read_to_string(&path).map_err(|error| MainError::ReadFile(error, Cow::Borrowed(path)))
-    })
+pub fn create_if_not_dir(path: Cow<'static, Path>) -> Result<(), MainError> {
+    if path.is_dir() {
+        return Ok(());
+    }
+
+    DirBuilder::new()
+        .recursive(true)
+        .create(&path)
+        .map_err(|error| MainError::CreateDirectory(error, path))
 }
 
-// #[derive(Default)]
-// pub struct PathCache {
-//     root: Option<PathBuf>,
-//     project_tokens: Option<PathBuf>,
-//     token: Option<PathBuf>,
-//     release: Option<PathBuf>,
-// }
-// impl PathCache {
+#[derive(Deserialize)]
+struct GetUserAppsResponse {
+    message: Option<String>,
+    apps: Option<Vec<App>>,
+}
+#[derive(Deserialize)]
+pub struct App {
+    id: String,
+    name: String,
+}
 
-//     // fn set_root_raw(root: &mut Option<PathBuf>) -> Option<&Path> {
-//     //     if root.is_none() {
-//     //         *root = dirs::cache_dir().map(|mut root| {
-//     //             root.push(crate::NAME);
-//     //             root
-//     //         });
-//     //     }
+pub async fn get_project_token(project: Cow<'_, str>) -> Result<String, MainError> {
+    let project_token = PROJECT_TOKENS.as_ref().ok_or(MainError::GetCache)?;
 
-//     //     root.as_deref()
-//     // }
-//     // pub fn set_root(&mut self) -> Result<&Path, GetCacheError> {
-//     //     Self::set_root_raw(&mut self.root).ok_or(GetCacheError)
-//     // }
+    create_if_not_dir(Cow::Borrowed(project_token))?;
 
-//     // fn set_branch<'a>(
-//     //     root: &mut Option<PathBuf>,
-//     //     branch: &'a mut Option<PathBuf>,
-//     //     file_name: &str,
-//     // ) -> Result<&'a Path, GetCacheError> {
-//     //     if branch.is_none() {
-//     //         *branch = Self::set_root_raw(root)
-//     //             .as_deref()
-//     //             .map(PathBuf::from)
-//     //             .map(|mut path| {
-//     //                 path.push(file_name);
-//     //                 path
-//     //             });
-//     //     }
+    let mut project_token_path = project_token.to_path_buf();
+    project_token_path.push(project.as_ref());
 
-//     //     branch.as_deref().ok_or(GetCacheError)
-//     // }
-//     // pub fn set_token(&mut self) -> Result<&Path, GetCacheError> {
-//     //     Self::set_branch(&mut self.root, &mut self.token, "token")
-//     // }
-//     // pub fn set_project_tokens(&mut self) -> Result<&Path, GetCacheError> {
-//     //     Self::set_branch(&mut self.root, &mut self.project_tokens, "project_tokens")
-//     // }
-//     // pub fn set_release(&mut self) -> Result<&Path, GetCacheError> {
-//     //     Self::set_branch(&mut self.root, &mut self.release, "release")
-//     // }
+    if project_token_path.is_file() {
+        fs::read_to_string(&project_token_path)
+            .map_err(|error| MainError::ReadFile(error, Cow::Owned(project_token_path)))
+    } else {
+        let token = read_token()?;
 
-//     // pub fn get_token(&self) -> Result<&Path, GetCacheError> {
-//     //     self.token.as_deref().ok_or(GetCacheError)
-//     // }
-//     // pub fn get_project_tokens(&mut self) -> Result<&Path, GetCacheError> {
-//     //     self.project_tokens.as_deref().ok_or(GetCacheError)
-//     // }
-//     // pub fn get_release(&self) -> Result<&Path, GetCacheError> {
-//     //     self.release.as_deref().ok_or(GetCacheError)
-//     // }
+        use serde::Serialize;
+        #[derive(Serialize)]
+        struct Body {
+            token: String,
+        }
 
-//     // pub fn into_root(mut self) -> Result<PathBuf, GetCacheError> {
-//     //     self.root
-//     //         .take()
-//     //         .or_else(|| {
-//     //             Self::set_root_raw(&mut self.root);
-//     //             self.root.take()
-//     //         })
-//     //         .ok_or(GetCacheError)
-//     // }
-//     // fn into_branch(
-//     //     root: &mut Option<PathBuf>,
-//     //     branch: &mut Option<PathBuf>,
-//     //     file_name: &str,
-//     // ) -> Result<PathBuf, GetCacheError> {
-//     //     branch
-//     //         .take()
-//     //         .or_else(|| {
-//     //             Self::set_root_raw(root);
-//     //             root.take().map(|mut root| {
-//     //                 root.push(file_name);
-//     //                 root
-//     //             })
-//     //         })
-//     //         .ok_or(GetCacheError)
-//     // }
-//     // pub fn into_token(mut self) -> Result<PathBuf, GetCacheError> {
-//     //     Self::into_branch(&mut self.root, &mut self.token, "token")
-//     // }
-//     // pub fn into_release(mut self) -> Result<PathBuf, GetCacheError> {
-//     //     Self::into_branch(&mut self.root, &mut self.release, "release")
-//     // }
+        Client::builder()
+            .build()
+            .map_err(MainError::CreateClient)?
+            .get(&format!(
+                "https://neighborhood.hackclub.com/api/getUserApps?token={token}"
+            ))
+            .send()
+            .await
+            .and_then(Response::error_for_status)
+            .map_err(MainError::ExecuteRequest)?
+            .text()
+            .await
+            .map_err(MainError::ExecuteRequest)
+            .and_then(|response| {
+                serde_json::from_str(&response)
+                    .map_err(|error| MainError::DecodeResponse(error, response))
+            })
+            .and_then(|GetUserAppsResponse { apps, message }| {
+                apps.ok_or(MainError::Server(message))
+            })
+            .and_then(|apps| {
+                apps.into_iter()
+                    .fold(None, |accum, App { id, name }| {
+                        let mut path = project_token.clone();
+                        path.push(&name);
+                        let _ = fs::write(path, &id);
 
-//     // pub fn read_project_token(&mut self, project: &str) -> Result<String, MainError> {
-//     //     let mut project_path = self.set_project_tokens()?.to_path_buf();
-//     //     project_path.push(project);
-
-//     //     if project_path.is_file() {
-//     //         fs::read_to_string(&project_path)
-//     //             .map_err(|error| MainError::ReadFile(error, project_path))
-//     //     } else {
-//     //         todo!()
-//     //     }
-//     // }
-
-//     // pub fn read_token(&mut self) -> Result<String, MainError> {
-//     //     self.set_token()
-//     //         .map_err(MainError::GetCache)
-//     //         .and_then(|path| {
-//     //             fs::read_to_string(&path)
-//     //                 .map_err(|error| MainError::ReadFile(error, path.to_path_buf()))
-//     //         })
-//     // }
-//     // pub fn try_read_token(&self) -> Result<String, MainError> {
-//     //     self.get_token()
-//     //         .map_err(MainError::GetCache)
-//     //         .and_then(|path| {
-//     //             fs::read_to_string(path)
-//     //                 .map_err(|error| MainError::ReadFile(error, path.to_path_buf()))
-//     //         })
-//     // }
-// }
+                        if name == project {
+                            Some(id)
+                        } else {
+                            accum
+                        }
+                    })
+                    .ok_or_else(|| MainError::NonExistantProject(project.into_owned()))
+            })
+    }
+}
+pub fn read_token() -> Result<String, MainError> {
+    TOKEN
+        .as_ref()
+        .ok_or(MainError::GetCache)
+        .and_then(|path| fs::read_to_string(&path).map_err(|_| MainError::GetToken))
+}
