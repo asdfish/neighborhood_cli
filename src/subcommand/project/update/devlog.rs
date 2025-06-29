@@ -12,12 +12,7 @@ use {
     tokio::runtime,
 };
 
-pub fn execute(
-    mut args: ArgMatches,
-    name: &str,
-    async_upload: bool,
-    message: &str,
-) -> Result<(), MainError> {
+pub fn execute(mut args: ArgMatches, name: &str, message: &str) -> Result<(), MainError> {
     let photobooth = args.remove_one::<String>("photobooth").unwrap();
     let demo = args.remove_one::<String>("demo").unwrap();
 
@@ -34,11 +29,7 @@ pub fn execute(
     let demo = UploadVideo::new(&demo);
     let photobooth = photobooth.upload(&client, token.clone());
     let demo = demo.upload(&client, token.clone());
-    let (photobooth, demo) = if async_upload {
-        runtime.block_on(future::zip(photobooth, demo))
-    } else {
-        (runtime.block_on(photobooth), runtime.block_on(demo))
-    };
+    let (photobooth, demo) = runtime.block_on(future::zip(photobooth, demo));
 
     let photobooth = photobooth?;
     let demo = demo?;

@@ -68,12 +68,6 @@ fn root_command() -> Command {
                         .about("Update things related to this project")
                         .subcommand_required(true)
                         .arg(
-                            Arg::new("async")
-                                .help("Enable asynchronous uploads. WARNING: This may not work with large files")
-                                .short('a')
-                                .action(ArgAction::SetTrue)
-                        )
-                        .arg(
                             Arg::new("message")
                                 .help("What changed between this and the last version")
                                 .value_parser(NonEmptyStringValueParser::default())

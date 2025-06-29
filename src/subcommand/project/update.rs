@@ -159,12 +159,11 @@ impl UploadApi for UploadVideo<'_> {
 }
 
 pub fn execute(mut args: ArgMatches, name: &str) -> Result<(), MainError> {
-    let async_upload = args.remove_one("async").unwrap_or_default();
     let message = args.remove_one::<String>("message").unwrap();
     let (subcommand, args) = args.remove_subcommand().unwrap();
 
     match subcommand.as_str() {
-        "devlog" => devlog::execute(args, name, async_upload, message.as_str()),
+        "devlog" => devlog::execute(args, name, message.as_str()),
         "release" | "ship" => release::execute(args, name, message),
         _ => unreachable!(),
     }
