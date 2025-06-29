@@ -20,5 +20,5 @@ toml_edit = { version = "0.22.27", default-features = false, features = ["displa
 [profile.release]
 lto = "fat"
 strip = true
-panic = "abort
+panic = "abort"
 codegen-units = "1"
