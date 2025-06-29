@@ -1,15 +1,13 @@
 use {
     crate::{
+        MainError,
         api::MessageResponse,
         cache::read_token,
         subcommand::project::update::{UploadApi, UploadVideo},
-        MainError,
     },
     clap::ArgMatches,
     futures_lite::future,
-    reqwest::{
-        Client, Response,
-    },
+    reqwest::{Client, Response},
     serde::Serialize,
     tokio::runtime,
 };

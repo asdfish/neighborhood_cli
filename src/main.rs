@@ -6,8 +6,8 @@ mod subcommand;
 use {
     cfg_if::cfg_if,
     clap::{
-        builder::{Arg, Command, NonEmptyStringValueParser},
         ArgAction,
+        builder::{Arg, Command, NonEmptyStringValueParser},
     },
     std::{
         borrow::Cow,
