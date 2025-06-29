@@ -56,10 +56,7 @@ pub fn execute(mut args: ArgMatches) -> Result<(), MainError> {
                 let otp = login_args.get_one::<String>("otp").unwrap();
                 client
                     .post("https://neighborhood.hackclub.com/api/verifyOTP")
-                    .json(&VerifyOtp {
-                        email: &email,
-                        otp: &otp,
-                    })
+                    .json(&VerifyOtp { email, otp })
                     .send()
                     .and_then(Response::error_for_status)
                     .map_err(MainError::ExecuteRequest)

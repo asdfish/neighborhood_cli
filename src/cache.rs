@@ -74,7 +74,7 @@ pub async fn get_project_token(project: Cow<'_, str>) -> Result<String, MainErro
         Client::builder()
             .build()
             .map_err(MainError::CreateClient)?
-            .get(&format!(
+            .get(format!(
                 "https://neighborhood.hackclub.com/api/getUserApps?token={token}"
             ))
             .send()
@@ -108,5 +108,5 @@ pub fn read_token() -> Result<String, MainError> {
     TOKEN
         .as_ref()
         .ok_or(MainError::GetCache)
-        .and_then(|path| fs::read_to_string(&path).map_err(|_| MainError::GetToken))
+        .and_then(|path| fs::read_to_string(path).map_err(|_| MainError::GetToken))
 }

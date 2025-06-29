@@ -59,7 +59,7 @@ pub fn execute(
             .json(&PostDevlog {
                 demo_video: &demo,
                 photobooth_video: &photobooth,
-                description: &message,
+                description: message,
                 neighbor: &token,
                 app: name,
             })

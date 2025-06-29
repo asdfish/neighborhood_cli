@@ -146,12 +146,13 @@ fn root_command() -> Command {
 }
 
 fn main() -> ExitCode {
-    (|| subcommand::execute(root_command().get_matches()))()
-        .map(|_| ExitCode::SUCCESS)
-        .unwrap_or_else(|err| {
-            eprintln!("{err}");
+    match subcommand::execute(root_command().get_matches()) {
+        Ok(()) => ExitCode::SUCCESS,
+        Err(error) => {
+            eprintln!("{error}");
             ExitCode::FAILURE
-        })
+        }
+    }
 }
 
 #[derive(Debug)]

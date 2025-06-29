@@ -148,7 +148,7 @@ whatAreWeDoingWell = """#;
 
 fn validate(release_config: &str) -> Result<DocumentMut, TomlError> {
     release_config.parse::<DocumentMut>().and_then(|document| {
-        toml_edit::de::from_str::<ReleaseConfig>(&release_config)
+        toml_edit::de::from_str::<ReleaseConfig>(release_config)
             .map(move |_| document)
             .map_err(TomlError::from)
     })
@@ -160,7 +160,7 @@ pub fn execute(mut args: ArgMatches, name: &str, message: String) -> Result<(), 
     if !release.is_dir() {
         DirBuilder::new()
             .recursive(true)
-            .create(&release)
+            .create(release)
             .map_err(|error| MainError::CreateDirectory(error, Cow::Borrowed(release)))?;
     }
     let mut release_config = release.to_path_buf();
@@ -228,7 +228,8 @@ pub fn execute(mut args: ArgMatches, name: &str, message: String) -> Result<(), 
                                 line.clear();
                                 stdin().read_line(&mut line).map_err(MainError::ReadLine)?;
                                 match line.trim() {
-                                    "y" | "yes" | _ if yes => break 'doc Ok(document),
+                                    _ if yes => break 'doc Ok(document),
+                                    "y" | "yes" => break 'doc Ok(document),
                                     "n" | "no" => return Ok(()),
                                     response => eprintln!("unknown option `{response}`"),
                                 }
@@ -241,7 +242,8 @@ pub fn execute(mut args: ArgMatches, name: &str, message: String) -> Result<(), 
                                 line.clear();
                                 stdin().read_line(&mut line).map_err(MainError::ReadLine)?;
                                 match line.trim() {
-                                    "y" | "yes" | _ if yes => return Ok(()),
+                                    _ if yes => return Ok(()),
+                                    "y" | "yes" => return Ok(()),
                                     "n" | "no" => break,
                                     response => eprintln!("unknown option `{response}`"),
                                 }
@@ -285,7 +287,7 @@ pub fn execute(mut args: ArgMatches, name: &str, message: String) -> Result<(), 
 
             let urls = runtime.block_on(request.upload(&client, token.clone()))?;
 
-            document
+            let _ = document
                 .as_item_mut()
                 .as_table_mut()
                 .and_then(|table| table.get_mut("screenshots"))
