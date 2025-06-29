@@ -8,7 +8,7 @@ use {
     },
     clap::ArgMatches,
     reqwest::{Client, Response},
-    serde::{Deserialize, Deserializer, Serialize},
+    serde::{Deserialize, Deserializer, Serialize, Serializer},
     std::{
         borrow::Cow,
         ffi::OsString,
@@ -24,6 +24,13 @@ use {
 };
 
 const ERROR: &str = "string cannot be empty";
+
+pub fn serialize_iso_8601<S>(date: &Date, serializer: S) -> Result<S::Ok, S::Error>
+where
+    S: Serializer
+{
+    serializer.serialize_str(&date.to_string())
+}
 
 pub fn deserialize_vec_non_empty_string<'de, D>(deserializer: D) -> Result<Vec<String>, D::Error>
 where
@@ -81,6 +88,7 @@ struct ReleaseConfig {
     #[serde(deserialize_with = "deserialize_non_empty_string")]
     address_line_1: String,
     address_line_2: String,
+    #[serde(serialize_with = "serialize_iso_8601")]
     birthday: Date,
     #[serde(deserialize_with = "deserialize_non_empty_string")]
     city: String,
@@ -298,24 +306,29 @@ pub fn execute(
         release_config.changes_made = message;
         release_config.token = token;
 
-        runtime.block_on(async {
-            client
-                .post("https://neighborhood.hackclub.com/api/shipApp")
-                .json(&release_config)
-                .send()
-                .await
-                .and_then(Response::error_for_status)
-                .map_err(MainError::ExecuteRequest)?
-                .text()
-                .await
-                .map_err(MainError::ExecuteRequest)
-                .and_then(|response| {
-                    serde_json::from_str(&response)
-                        .map_err(|error| MainError::DecodeResponse(error, response.to_string()))
-                })
-                .map(|MessageResponse { message }| {
-                    eprintln!("{message}");
-                })
-        })
+        // runtime.block_on(async {
+        //     client
+        //         .post("https://neighborhood.hackclub.com/api/shipApp")
+        //         .json(&release_config)
+        //         .send()
+        //         .await
+        //         .and_then(Response::error_for_status)
+        //         .map_err(MainError::ExecuteRequest)?
+        //         .text()
+        //         .await
+        //         .map_err(MainError::ExecuteRequest)
+        //         .and_then(|response| {
+        //             serde_json::from_str(&response)
+        //                 .map_err(|error| MainError::DecodeResponse(error, response.to_string()))
+        //         })
+        //         .map(|MessageResponse { message }| {
+        //             eprintln!("{message}");
+        //         })
+        // })
+        // println!("{:?}", serde_json::from_str(&release_config));
+
+        println!("{}", serde_json::to_string(&release_config).unwrap());
+
+        todo!()
     })
 }
