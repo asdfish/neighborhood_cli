@@ -16,3 +16,9 @@ serde_json = { version = "1.0.140", default-features = false, features = ["alloc
 tempfile = { version = "3.20.0", default-features = false }
 tokio = { version = "1.45.1", features = ["fs", "rt"], default-features = false }
 toml_edit = { version = "0.22.27", default-features = false, features = ["display", "parse", "serde"] }
+
+[profile.release]
+lto = "fat"
+strip = true
+panic = "abort
+codegen-units = "1"
