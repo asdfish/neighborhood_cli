@@ -23,6 +23,9 @@ jobs:
             packages: gcc-mingw-w64-x86-64
             toolchain: x86_64-w64-mingw32-gcc
             executable-suffix: .exe
+          - target: aarch64-pc-windows-msvc
+            host: windows-latest
+            executable-suffix: .exe
           # - target: aarch64-pc-windows-gnullvm
           #   host: ubuntu-latest
           #   executable-suffix: .exe
