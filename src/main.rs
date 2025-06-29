@@ -159,7 +159,8 @@ fn main() -> ExitCode {
 pub enum MainError {
     CreateClient(reqwest::Error),
     CreateDirectory(io::Error, Cow<'static, Path>),
-    CreateFile(io::Error, PathBuf),
+    CreateParentDirectory(io::Error, Cow<'static, Path>),
+    CreateFile(io::Error, Cow<'static, Path>),
     CreateRuntime(io::Error),
     CreateTempDir(io::Error),
     DecodeResponse(serde_json::Error, String),
@@ -167,10 +168,13 @@ pub enum MainError {
     ReadLine(io::Error),
     GetCache,
     GetToken,
+    GetMetadata(io::Error, Cow<'static, Path>),
     NoEditor,
     NonExistantProject(String),
     ParseReleaseConfig(TomlError),
+    RemoveFile(io::Error, Cow<'static, Path>),
     ReadFile(io::Error, Cow<'static, Path>),
+    SetPermissions(io::Error, Cow<'static, Path>),
     WriteFile(io::Error, Cow<'static, Path>),
     ExecuteRequest(reqwest::Error),
     Server(Option<String>),
@@ -184,6 +188,7 @@ impl Display for MainError {
                 "failed to create directory at path `{}`: {error}",
                 path.display()
             ),
+            Self::CreateParentDirectory(error, path) => write!(f, "failed to create directory at path `{}`: {error}", path.parent().unwrap_or(path.as_ref()).display()),
             Self::CreateFile(error, path) => write!(
                 f,
                 "failed to create file at path `{}`: {error}",
@@ -194,6 +199,8 @@ impl Display for MainError {
             Self::DecodeResponse(error, response) => write!(f, "failed to decode response `{response}`: {error}"),
             Self::ExecuteCommand(error, command) => write!(f, "failed to execute command `{command}`: {error}"),
             Self::ReadLine(error) => write!(f, "failed to read input: {error}"),
+            Self::GetMetadata(error, path) => write!(f, "failed to get metadata for path `{}`: {error}", path.display()),
+            Self::RemoveFile(error, path) => write!(f, "failed to remove file at path `{}`: {error}", path.display()),
             Self::NoEditor => f.write_str("failed to get editor: flag `--editor` was not specified and both environment variables `VISUAL` and `EDITOR` were not set"),
             Self::NonExistantProject(project) => write!(f, "project `{project}` does not exist"),
             Self::ParseReleaseConfig(error) => write!(f, "failed to read release config:\n{error}\nRun `neighborhood_cli project <project> post ship -m <message> -e` to edit"),
@@ -202,6 +209,7 @@ impl Display for MainError {
                 "failed to read file at path `{}`: {error}",
                 path.display()
             ),
+            Self::SetPermissions(error, path) => write!(f, "failed to set permissions on file at path `{}`: {error}", path.display()),
             Self::WriteFile(error, path) => write!(
                 f,
                 "failed to write to file at path `{}`: {error}",

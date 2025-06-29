@@ -2,7 +2,7 @@ use {
     crate::{
         MainError,
         api::MessageResponse,
-        cache::{RELEASE, get_project_token, read_token},
+        cache::{RELEASE, get_project_token, read_token, write_file},
         env,
         subcommand::project::update::{UploadApi, UploadImages},
     },
@@ -184,8 +184,7 @@ pub fn execute(mut args: ArgMatches, name: &str, message: String) -> Result<(), 
                 path.push(name);
                 path.set_extension("toml");
 
-                fs::write(&path, contents.as_ref())
-                    .map_err(|error| MainError::WriteFile(error, Cow::Owned(path.clone())))?;
+                write_file(Cow::Owned(path.clone()), contents.as_bytes())?;
 
                 let command = args
                     .remove_one::<String>("editor")
@@ -222,7 +221,7 @@ pub fn execute(mut args: ArgMatches, name: &str, message: String) -> Result<(), 
                             .map_err(TomlError::from)
                     }) {
                         Ok(document) => {
-                            let _ = fs::write(&path, release_config);
+                            write_file(Cow::Owned(path.clone()), release_config.as_bytes());
                             loop {
                                 eprintln!("Submit: (yes/no)?: {document}");
                                 line.clear();
@@ -300,7 +299,7 @@ pub fn execute(mut args: ArgMatches, name: &str, message: String) -> Result<(), 
                 });
         }
 
-        let _ = fs::write(&release_config, document.to_string());
+        let _ = write_file(Cow::Owned(release_config), document.to_string().as_bytes());
         let mut release_config = toml_edit::de::from_document::<ReleaseConfig>(document)
             .map_err(TomlError::from)
             .map_err(MainError::ParseReleaseConfig)?;

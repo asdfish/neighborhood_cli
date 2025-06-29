@@ -1,5 +1,9 @@
 use {
-    crate::{MainError, api::MessageResponse, cache::TOKEN},
+    crate::{
+        MainError,
+        api::MessageResponse,
+        cache::{TOKEN, write_file},
+    },
     clap::ArgMatches,
     reqwest::blocking::{Client, Response},
     serde::{Deserialize, Serialize},
@@ -85,9 +89,7 @@ pub fn execute(mut args: ArgMatches) -> Result<(), MainError> {
                                     }
                                 }
 
-                                fs::write(path, token).map_err(|error| {
-                                    MainError::WriteFile(error, Cow::Borrowed(path))
-                                })
+                                write_file(Cow::Borrowed(path), token.as_bytes())
                             })
                     })
             }

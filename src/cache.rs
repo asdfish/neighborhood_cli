@@ -1,10 +1,12 @@
 use {
     crate::MainError,
+    cfg_if::cfg_if,
     reqwest::{Client, Response},
     serde::Deserialize,
     std::{
         borrow::Cow,
-        fs::{self, DirBuilder},
+        fs::{self, DirBuilder, File},
+        io::Write,
         path::{Path, PathBuf},
         sync::LazyLock,
     },
@@ -57,6 +59,46 @@ pub struct App {
     name: String,
 }
 
+pub fn write_file(path: Cow<'static, Path>, contents: &[u8]) -> Result<(), MainError> {
+    if let Some(parent) = path.parent().filter(|path| !path.is_dir()) {
+        if let Err(error) = DirBuilder::new().recursive(true).create(parent) {
+            return Err(MainError::CreateParentDirectory(error, path));
+        }
+    }
+
+    if path.is_file() {
+        if let Err(error) = fs::remove_file(&path) {
+            return Err(MainError::RemoveFile(error, path));
+        }
+    }
+
+    let mut file = match File::create(&path) {
+        Ok(file) => file,
+        Err(error) => return Err(MainError::CreateFile(error, path)),
+    };
+    match file.write_all(contents).and_then(|_| file.flush()) {
+        Ok(()) => {}
+        Err(error) => return Err(MainError::WriteFile(error, path)),
+    }
+
+    let metadata = match file.metadata() {
+        Ok(m) => m,
+        Err(error) => return Err(MainError::GetMetadata(error, path)),
+    };
+    let mut permissions = metadata.permissions();
+    cfg_if! {
+        if #[cfg(unix)] {
+            use std::os::unix::fs::PermissionsExt;
+            permissions.set_mode(0b100_000_000);
+        } else {
+            permissions.set_readonly(true);
+        }
+    }
+
+    file.set_permissions(permissions)
+        .map_err(|error| MainError::SetPermissions(error, path))
+}
+
 pub async fn get_project_token(project: Cow<'_, str>) -> Result<String, MainError> {
     let project_token = PROJECT_TOKENS.as_ref().ok_or(MainError::GetCache)?;
 
@@ -98,7 +140,7 @@ pub async fn get_project_token(project: Cow<'_, str>) -> Result<String, MainErro
                     .fold(None, |accum, App { id, name }| {
                         let mut path = project_token.clone();
                         path.push(&name);
-                        let _ = fs::write(path, &id);
+                        let _ = write_file(Cow::Owned(path.clone()), id.as_bytes());
 
                         if name == project { Some(id) } else { accum }
                     })
