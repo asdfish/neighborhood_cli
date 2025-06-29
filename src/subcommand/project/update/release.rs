@@ -161,7 +161,6 @@ pub fn execute(
     let mut release_config = release.to_path_buf();
     release_config.push(name);
     release_config.set_extension("toml");
-    eprintln!("{release_config:?}");
 
     if !release_config.exists() || args.remove_one("edit").unwrap_or_default() {
         let contents = if !release_config.exists() || args.remove_one("reset").unwrap_or_default() {
