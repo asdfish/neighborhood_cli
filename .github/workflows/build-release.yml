@@ -153,7 +153,7 @@ jobs:
               export RUSTFLAGS="${RUSTFLAGS} -Clinker=gcc"
           fi
 
-          cargo build --target ${{matrix.target}} --release --locked
+          cargo build --target ${{matrix.target}} --release --locked --verbose
       - name: Upload
         uses: actions/upload-artifact@v4
         with:
