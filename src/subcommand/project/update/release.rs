@@ -228,7 +228,7 @@ pub fn execute(mut args: ArgMatches, name: &str, message: String) -> Result<(), 
                                 break 'doc Ok(document);
                             }
                             loop {
-                                eprintln!("Submit: (yes/no)?: {document}");
+                                eprintln!("{document}\nSubmit: (yes/no)?:");
                                 line.clear();
                                 stdin().read_line(&mut line).map_err(MainError::ReadLine)?;
                                 match line.trim() {
