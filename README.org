@@ -24,6 +24,8 @@
 
 ** Post devlog
 
+/WARNING/: Uploading videos may not work. This is a known issue with the backend. /DO NOT/ report this as a bug.
+
 #+begin_src shell
   neighborhood project <project> update <message> devlog --photobooth <path> --demo <path>
 #+end_src
