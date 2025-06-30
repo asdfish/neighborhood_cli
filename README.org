@@ -13,13 +13,13 @@
 ** Send otp code
 
 #+begin_src shell
-  neighborhood auth <email> send
+  neighborhood_cli auth <email> send
 #+end_src
 
 ** Login with otp
 
 #+begin_src shell
-  neighborhood auth <email> login <otp>
+  neighborhood_cli auth <email> login <otp>
 #+end_src
 
 ** Post devlog
@@ -27,13 +27,13 @@
 /WARNING/: Uploading videos may not work. This is a known issue with the backend. /DO NOT/ report this as a bug.
 
 #+begin_src shell
-  neighborhood project <project> update <message> devlog --photobooth <path> --demo <path>
+  neighborhood_cli project <project> update <message> devlog --photobooth <path> --demo <path>
 #+end_src
 
 ** Post release
 
 #+begin_src shell
-  neighborhood project <project> update <message> release -e
+  neighborhood_cli project <project> update <message> release -e
 #+end_src
 
 [[https://neighborhood.hackclub.com/][https://images.fillout.com/orgid-81/flowpublicid-2d6RsxRU3ius/widgetid-gHXJ/wLL8YM3u5TEHNwmmey7cHo/summer25.png?a=4hit9PajYRUKJJYwW78gvU]]
