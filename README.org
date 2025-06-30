@@ -25,13 +25,13 @@
 ** Post devlog
 
 #+begin_src shell
-  neighborhood project <project> update <message> --photobooth <path> --demo <path>
+  neighborhood project <project> update <message> devlog --photobooth <path> --demo <path>
 #+end_src
 
 ** Post release
 
 #+begin_src shell
-  neighborhood project <project> update <message> -e
+  neighborhood project <project> update <message> release -e
 #+end_src
 
 [[https://neighborhood.hackclub.com/][https://images.fillout.com/orgid-81/flowpublicid-2d6RsxRU3ius/widgetid-gHXJ/wLL8YM3u5TEHNwmmey7cHo/summer25.png?a=4hit9PajYRUKJJYwW78gvU]]
