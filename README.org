@@ -2,10 +2,36 @@
 #+author: asdfish
 #+date: 2025-06-26
 
-* Usage
+* Recipes
+
+** Usage
 
 #+begin_src shell
   neighborhood_cli --help
+#+end_src
+
+** Send otp code
+
+#+begin_src shell
+  neighborhood auth <email> send
+#+end_src
+
+** Login with otp
+
+#+begin_src shell
+  neighborhood auth <email> login <otp>
+#+end_src
+
+** Post devlog
+
+#+begin_src shell
+  neighborhood project <project> update <message> --photobooth <path> --demo <path>
+#+end_src
+
+** Post release
+
+#+begin_src shell
+  neighborhood project <project> update <message> -e
 #+end_src
 
 [[https://neighborhood.hackclub.com/][https://images.fillout.com/orgid-81/flowpublicid-2d6RsxRU3ius/widgetid-gHXJ/wLL8YM3u5TEHNwmmey7cHo/summer25.png?a=4hit9PajYRUKJJYwW78gvU]]
